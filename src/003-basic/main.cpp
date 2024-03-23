@@ -66,7 +66,7 @@ void setFancyImguiStyle()
 
 int main()
 {
-    sf::RenderWindow window{sf::VideoMode(1200, 1000), "001 basic"};
+    sf::RenderWindow window{sf::VideoMode(1200, 1000), "003 basic"};
 
     if (!ImGui::SFML::Init(window)) {
         std::cerr << "Unable to initialise SFML\n";
@@ -76,15 +76,21 @@ int main()
 
     auto& io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+    /// don't create the ini file
+    io.IniFilename = NULL;
+    io.LogFilename = NULL;
 
     // auto fancyFont = io.Fonts->AddFontFromFileTTF("./resources/fonts/hubballi-regular.ttf", 20);
-    auto fancyFont = io.Fonts->AddFontFromFileTTF("./resources/fonts/audiowide.ttf", 14);
+    auto fancyFont = io.Fonts->AddFontFromFileTTF("./assets/fonts/audiowide.ttf", 14);
     if (!ImGui::SFML::UpdateFontTexture()) {
         std::cerr << "No luck\n";
     }
 
     // setFancyImguiStyle();
 
+    ImVec2 viewportPosition;
+    ImVec2 viewportSize;
+    bool firstRun = true;
     sf::Clock deltaClock{};
     while (window.isOpen()) {
         sf::Event event{};
@@ -116,6 +122,7 @@ int main()
         ImGui::DockSpaceOverViewport();
 
         ImGui::ShowDemoWindow();
+
         ImGui::SetNextItemWidth(400);
         if (ImGui::Begin("Circle manipulator")) {
             ImGuiColorEditFlags flags = ImGuiColorEditFlags_AlphaBar;
@@ -127,8 +134,18 @@ int main()
         }
 
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.f, 0.f));
+        if (firstRun) {
+            viewportPosition = ImVec2(20, 280);
+            ImGui::SetNextWindowPos(viewportPosition);
+            firstRun = false;
+        }
         if (ImGui::Begin("Viewport")) {
+            std::string title = "Your Widget - Position: (" + std::to_string((int) viewportPosition.x) + ", " + std::to_string((int) viewportPosition.y)
+                + ") Size: (" + std::to_string((int) viewportSize.x) + ", " + std::to_string((int) viewportSize.y) + ")";
+            ImGui::Text("%s", title.c_str());
+
             viewportSize = ImGui::GetWindowSize();
+            viewportPosition = ImGui::GetWindowPos();
             ImGui::Image(rt);
         }
         ImGui::End();

@@ -36,47 +36,31 @@ set(IMGUI_LIBS ImGui-SFML::ImGui-SFML)
 
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-add_subdirectory(src/001-basic)
+add_subdirectory(src/001-basic-window-and-shapes)
 add_subdirectory(src/002-basic)
-
-# add_executable(001-app "")
-# target_sources(001-app PRIVATE
-# src/001-main.cpp
-# )
-# target_compile_options(001-app PRIVATE
-# ${DEFAULT_COMPILER_OPTIONS_AND_WARNINGS}
-# )
-# target_link_libraries(
-# 001-app PRIVATE
-# ${SANITIZER_FLAGS}
-# ${SFML_LIBS}
-# ${IMGUI_LIBS}
-# )
-
-# target_compile_features(001-app PUBLIC cxx_std_20)
-# add_executable(002-app "")
-# target_sources(002-app PRIVATE
-# src/002-main.cpp
-# )
-# target_compile_options(002-app PRIVATE
-# ${DEFAULT_COMPILER_OPTIONS_AND_WARNINGS}
-# )
-# target_link_libraries(
-# 002-app PRIVATE
-# ${SANITIZER_FLAGS}
-# ${SFML_LIBS}
-# ${IMGUI_LIBS}
-# )
+add_subdirectory(src/003-basic)
 
 # if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
 # file(COPY ${CMAKE_SOURCE_DIR}/resources DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
 # elseif(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
 # file(COPY ${CMAKE_SOURCE_DIR}/resources DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${CMAKE_BUILD_TYPE})
 # endif()
-# add_custom_command(
-# TARGET 001-app
-# COMMENT "Copy assets"
-# POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_directory
-# ${CMAKE_SOURCE_DIR}/resources
-# $<TARGET_FILE_DIR:001-app>/resources
-# VERBATIM)
+
+# Define the directory containing your asset files
+set(DATA_SOURCE_DIR ${CMAKE_SOURCE_DIR}/assets)
+
+# Define the directory where you want to copy the data files
+set(DATA_DEST_DIR ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/assets)
+
+# Copy data files after building the target
+add_custom_target(copy_data_files ALL
+    COMMENT "Copying data files to binary directory"
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${DATA_DEST_DIR}
+    COMMAND ${CMAKE_COMMAND} -E copy_directory ${DATA_SOURCE_DIR} ${DATA_DEST_DIR}
+    DEPENDS ${DATA_SOURCE_DIR}
+)
+
+# Set a dependency on copy_data_files for each of your target executables
+foreach(TARGET_EXECUTABLE ${TARGET_EXECUTABLES})
+    add_dependencies(${TARGET_EXECUTABLE} copy_data_files)
+endforeach()

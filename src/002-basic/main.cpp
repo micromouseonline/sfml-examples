@@ -76,6 +76,9 @@ int main()
 
     auto& io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+    /// don't create the ini file
+    io.IniFilename = NULL;
+    io.LogFilename = NULL;
 
     // auto fancyFont = io.Fonts->AddFontFromFileTTF("./resources/fonts/hubballi-regular.ttf", 20);
     auto fancyFont = io.Fonts->AddFontFromFileTTF("./resources/fonts/audiowide.ttf", 14);
