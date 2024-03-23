@@ -44,14 +44,15 @@ int main()
         std::cerr << "Unable to load texture\n";
         exit(1);
     }
-    sf::Sprite ship;
-    ship.setTexture(chicken);
-    ship.setTextureRect(sf::IntRect(0, 0, 32, 32));
-    ship.setOrigin(16, 16);
-    ship.setPosition(200, 200);
-    ship.scale(2, 2);
+    const int seq[] = {1, 2, 1, 0};
+    sf::Sprite chick;
+    chick.setTexture(chicken);
+    chick.setTextureRect(sf::IntRect(0, 0, 32, 32));
+    chick.setOrigin(16, 16);
+    chick.setPosition(200, 200);
+    chick.scale(2, 2);
     // setting a colour overlays the texture
-    ship.setColor(sf::Color(255, 255, 0, 255));
+    chick.setColor(sf::Color(255, 255, 0, 255));
 
     sf::Clock deltaClock{};
     int state = 0;
@@ -78,18 +79,18 @@ int main()
         /// rotate the rect and its texture rotates with it.
         /// the graphics card handles all that.
         rect.rotate(45 * time.asSeconds());
-        ship.rotate(90 * time.asSeconds());
-        float angle = ship.getRotation();
+        chick.rotate(90 * time.asSeconds());
+        float angle = chick.getRotation();
         float dx = std::cos((angle - 90) * 3.14 / 180) * 200;
         float dy = std::sin((angle - 90) * 3.14 / 180) * 200;
-        ship.move(sf::Vector2f(dx, dy) * time.asSeconds());
-        ship.setTextureRect(sf::IntRect(32 * state, 0, 32, 32));
+        chick.move(sf::Vector2f(dx, dy) * time.asSeconds());
+        chick.setTextureRect(sf::IntRect(32 * seq[state], 0, 32, 32));
         if (++f > 5) {
             f = 0;
-            state = (++state) % 3;
+            state = (++state) % 4;
         }
         window.draw(rect);
-        window.draw(ship);
+        window.draw(chick);
         window.display();
     }
 
