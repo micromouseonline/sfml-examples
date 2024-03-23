@@ -1,4 +1,3 @@
----
 Language:        Cpp
 BasedOnStyle:  WebKit
 BreakInheritanceList: AfterColon
@@ -9,4 +8,3 @@ KeepEmptyLinesAtTheStartOfBlocks: false
 SpaceAfterCStyleCast: true
 SpaceBeforeCpp11BracedList: false
 TabWidth:        4
-...
