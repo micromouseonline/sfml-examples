@@ -66,7 +66,7 @@ void setFancyImguiStyle()
 
 int main()
 {
-    sf::RenderWindow window{sf::VideoMode(1200, 1000), "ImGui + SFML = <3"};
+    sf::RenderWindow window{sf::VideoMode(1200, 1000), "001 basic"};
 
     if (!ImGui::SFML::Init(window)) {
         std::cerr << "Unable to initialise SFML\n";
@@ -107,7 +107,7 @@ int main()
 
         static ImVec2 viewportSize{500, 500};
         sf::RenderTexture rt{};
-        rt.create(viewportSize.x, viewportSize.y);
+        rt.create((unsigned int) viewportSize.x, (unsigned int) viewportSize.y);
 
         rt.clear(sf::Color::Black);
         rt.draw(shape);

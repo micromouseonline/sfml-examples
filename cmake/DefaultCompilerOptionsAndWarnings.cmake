@@ -8,7 +8,8 @@ set(COMMON_CLANG_AND_GCC_WARNINGS
     -Wconversion
     -Wsign-conversion
     -Wfloat-equal
-    -Wold-style-cast
+
+    # -Wold-style-cast
     -Wshadow
     -Wunused
 )
