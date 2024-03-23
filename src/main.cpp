@@ -1,14 +1,15 @@
 #include <iostream>
 
-#include "imgui.h"
 #include "imgui-SFML.h"
+#include "imgui.h"
 
 #include <SFML/Graphics.hpp>
 #include <SFML/System/Clock.hpp>
 #include <SFML/Window/Event.hpp>
 
 // Taken from https://github.com/ocornut/imgui/issues/707
-void setFancyImguiStyle() {
+void setFancyImguiStyle()
+{
     ImGui::GetStyle().FrameRounding = 4.0f;
     ImGui::GetStyle().GrabRounding = 4.0f;
 
@@ -19,7 +20,8 @@ void setFancyImguiStyle() {
     colors[ImGuiCol_ChildBg] = ImVec4(0.15f, 0.18f, 0.22f, 1.00f);
     colors[ImGuiCol_PopupBg] = ImVec4(0.08f, 0.08f, 0.08f, 0.94f);
     colors[ImGuiCol_Border] = ImVec4(0.08f, 0.10f, 0.12f, 1.00f);
-    colors[ImGuiCol_BorderShadow] = ImVec4(0.00f, 0.00f, 0.00f, 0.00f); colors[ImGuiCol_FrameBg] = ImVec4(0.20f, 0.25f, 0.29f, 1.00f);
+    colors[ImGuiCol_BorderShadow] = ImVec4(0.00f, 0.00f, 0.00f, 0.00f);
+    colors[ImGuiCol_FrameBg] = ImVec4(0.20f, 0.25f, 0.29f, 1.00f);
     colors[ImGuiCol_FrameBgHovered] = ImVec4(0.12f, 0.20f, 0.28f, 1.00f);
     colors[ImGuiCol_FrameBgActive] = ImVec4(0.09f, 0.12f, 0.14f, 1.00f);
     colors[ImGuiCol_TitleBg] = ImVec4(0.09f, 0.12f, 0.14f, 0.65f);
@@ -62,22 +64,26 @@ void setFancyImguiStyle() {
     colors[ImGuiCol_ModalWindowDimBg] = ImVec4(0.80f, 0.80f, 0.80f, 0.35f);
 }
 
-int main() {
-    sf::RenderWindow window{ sf::VideoMode(640, 480), "ImGui + SFML = <3" };
-    window.setFramerateLimit(60);
+int main()
+{
+    sf::RenderWindow window{sf::VideoMode(1200, 1000), "ImGui + SFML = <3"};
 
-    ImGui::SFML::Init(window);
+    if (!ImGui::SFML::Init(window)) {
+        std::cerr << "Unable to initialise SFML\n";
+    };
+    window.setFramerateLimit(60);
+    window.setPosition(sf::Vector2i(20, 20));
 
     auto& io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 
-    auto fancyFont = io.Fonts->AddFontFromFileTTF(
-            "./resources/fonts/hubballi-regular.ttf", 20);
+    // auto fancyFont = io.Fonts->AddFontFromFileTTF("./resources/fonts/hubballi-regular.ttf", 20);
+    auto fancyFont = io.Fonts->AddFontFromFileTTF("./resources/fonts/audiowide.ttf", 14);
     if (!ImGui::SFML::UpdateFontTexture()) {
         std::cerr << "No luck\n";
     }
 
-    setFancyImguiStyle();
+    // setFancyImguiStyle();
 
     sf::Clock deltaClock{};
     while (window.isOpen()) {
@@ -92,11 +98,11 @@ int main() {
 
         ImGui::SFML::Update(window, deltaClock.restart());
 
-        static ImVec4 circleColor{ 1.0f, 0.0f, 1.0f, 0.5f };
+        static ImVec4 circleColor{1.0f, 0.0f, 1.0f, 0.5f};
         static float circleRadius = 100.f;
         static std::size_t circlePoints = 30;
 
-        sf::CircleShape shape{ circleRadius, circlePoints};
+        sf::CircleShape shape{circleRadius, circlePoints};
         shape.setFillColor(circleColor);
 
         static ImVec2 viewportSize{500, 500};
@@ -110,15 +116,15 @@ int main() {
         ImGui::DockSpaceOverViewport();
 
         ImGui::ShowDemoWindow();
-
+        ImGui::SetNextItemWidth(400);
         if (ImGui::Begin("Circle manipulator")) {
             ImGuiColorEditFlags flags = ImGuiColorEditFlags_AlphaBar;
-            ImGui::ColorPicker4("Circle Color", (float*)&circleColor, flags, nullptr);
+            ImGui::ColorPicker4("Circle Color", (float*) &circleColor, flags, nullptr);
 
             ImGui::DragFloat("Circle Radius", &circleRadius);
-            ImGui::DragInt("Circle Points", (int *)&circlePoints, 1.0f, 3, 500);
+            ImGui::DragInt("Circle Points", (int*) &circlePoints, 1.0f, 3, 500);
+            ImGui::End();
         }
-        ImGui::End();
 
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.f, 0.f));
         if (ImGui::Begin("Viewport")) {
