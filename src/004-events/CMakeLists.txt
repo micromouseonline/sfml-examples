@@ -1,4 +1,4 @@
-set(APP 003-basic)
+set(APP 004-events)
 add_executable(${APP} "")
 target_sources(${APP} PRIVATE
   main.cpp
