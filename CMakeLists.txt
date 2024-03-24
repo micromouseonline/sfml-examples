@@ -40,6 +40,8 @@ add_subdirectory(src/001-basic-window-and-shapes)
 add_subdirectory(src/002-shapes-and-textures)
 add_subdirectory(src/003-text-and-fonts)
 add_subdirectory(src/004-events)
+add_subdirectory(src/005-mouse)
+add_subdirectory(src/006-keyboard)
 
 # if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
 # file(COPY ${CMAKE_SOURCE_DIR}/resources DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
