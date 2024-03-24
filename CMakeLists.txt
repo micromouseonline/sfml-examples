@@ -38,6 +38,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 add_subdirectory(src/001-basic-window-and-shapes)
 add_subdirectory(src/002-shapes-and-textures)
+add_subdirectory(src/003-text-and-fonts)
 add_subdirectory(src/003-basic)
 
 # if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
