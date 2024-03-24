@@ -44,6 +44,7 @@ int main()
         std::cerr << "Unable to load texture\n";
         exit(1);
     }
+
     const int seq[] = {1, 2, 1, 0};
     sf::Sprite chick;
     chick.setTexture(chicken);
@@ -57,7 +58,10 @@ int main()
     sf::Clock deltaClock{};
     int state = 0;
     int f = 0;
+
+    /// this is the 'game loop'
     while (window.isOpen()) {
+        /// process all the inputs
         sf::Event event{};
         while (window.pollEvent(event)) {
             if (event.type == sf::Event::Closed) {
@@ -74,21 +78,23 @@ int main()
                 window.setView(sf::View(visibleArea)); // or everything distorts
             }
         }
+
+        /// update the objects
         sf::Time time = deltaClock.restart();
-        window.clear();
-        /// rotate the rect and its texture rotates with it.
-        /// the graphics card handles all that.
-        rect.rotate(45 * time.asSeconds());
         chick.rotate(90 * time.asSeconds());
         float angle = chick.getRotation();
         float dx = std::cos((angle - 90) * 3.14 / 180) * 200;
         float dy = std::sin((angle - 90) * 3.14 / 180) * 200;
         chick.move(sf::Vector2f(dx, dy) * time.asSeconds());
-        chick.setTextureRect(sf::IntRect(32 * seq[state], 0, 32, 32));
-        if (++f > 5) {
-            f = 0;
-            state = (++state) % 4;
-        }
+        chick.setTextureRect(sf::IntRect(32 * seq[state / 5], 0, 32, 32));
+        state = (++state) % 20;
+
+        /// rotate the rect and its texture rotates with it.
+        /// the graphics card handles all that.
+        rect.rotate(45 * time.asSeconds());
+
+        /// and redraw the window
+        window.clear();
         window.draw(rect);
         window.draw(chick);
         window.display();
