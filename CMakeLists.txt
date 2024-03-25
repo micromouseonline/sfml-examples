@@ -42,6 +42,7 @@ add_subdirectory(src/003-text-and-fonts)
 add_subdirectory(src/004-events)
 add_subdirectory(src/005-mouse)
 add_subdirectory(src/006-keyboard)
+add_subdirectory(src/007-vertex-arrays)
 
 # if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
 # file(COPY ${CMAKE_SOURCE_DIR}/resources DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
