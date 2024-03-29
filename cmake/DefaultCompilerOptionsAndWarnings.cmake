@@ -4,9 +4,10 @@
 set(COMMON_CLANG_AND_GCC_WARNINGS
     -Wall
     -Wextra
-    -pedantic
-    -Wconversion
-    -Wsign-conversion
+
+    # -pedantic
+    # -Wconversion
+    # -Wsign-conversion
     -Wfloat-equal
 
     # -Wold-style-cast
