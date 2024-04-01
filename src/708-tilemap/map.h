@@ -67,55 +67,56 @@ class TileMap : public sf::Drawable, public sf::Transformable {
       return false;
     }
 
-    // resize the vertex array to fit the level_map size
-    m_vertices.setPrimitiveType(sf::Triangles);
-    m_vertices.resize(width * height * 6);
     int texture_tile_width = (m_tileset_texture.getSize().x / tileSize.x);
     int texture_tile_height = (m_tileset_texture.getSize().y / tileSize.y);
 
     // populate the vertex array, with two triangles per tile
-    for (unsigned int y = 0; y < width; ++y) {
-      for (unsigned int x = 0; x < height; ++x) {
+    for (unsigned int x = 0; x < height; ++x) {
+      for (unsigned int y = 0; y < width; ++y) {
         // get the current tile number
         int k = (y) + (x)*width;
-        std::cout << k << std::endl;
         int tileNumber = tiles[k];
         if (x == 1 && y == 0) {
           tileNumber = 15;
         } else {
           tileNumber = 0;
         }
-        tileNumber = y;
+        tileNumber = tiles[k];
+        m_map_labels[x][y].setFont(font);
+        m_map_labels[x][y].setCharacterSize(15);
+        m_map_labels[x][y].setString(std::to_string(10 * k));
+        m_map_labels[x][y].setFillColor(sf::Color::Yellow);
+        int dx = m_map_labels[x][y].getLocalBounds().width / 2;
+        int dy = m_map_labels[x][y].getLocalBounds().height / 1;
+        m_map_labels[x][y].setOrigin(sf::Vector2f(dx, dy));
+        // m_map_labels[x][y].setOrigin(sf::Vector2f(0, 0));
+
+        int txx = x * tileSize.x;
+        int tyy = (15 - y) * tileSize.y;
+        // tileNumber = x;
 
         // find its position in the tileset texture
         int tu = tileNumber % texture_tile_width;
-        int tv = tileNumber / texture_tile_width;
         tu = tileNumber;
-        tv = 0;
+        m_level_map[x][y].setTexture(m_tileset_texture);
+        m_level_map[x][y].setPosition(sf::Vector2f(txx * 0.3, tyy * 0.3));
+        m_level_map[x][y].setScale(0.3f, 0.3f);
+        m_level_map[x][y].setTextureRect(sf::IntRect(tileNumber * tileSize.x, 0, tileSize.x, tileSize.y));
+        if (x == 7 && (y == 7 || y == 8)) {
+          m_level_map[x][y].setColor(sf::Color::Red);
+        }
+        std::cout << k << " > " << m_level_map[x][y].getLocalBounds().height << std::endl;
 
-        // get a pointer to the triangles' vertices of the current tile
-        sf::Vertex* triangles = &m_vertices[(y + x * width) * 6];
-
-        // define the 6 corners of the two triangles
-        triangles[0].position = sf::Vector2f(y * tileSize.x, x * tileSize.y);
-        triangles[1].position = sf::Vector2f((y + 1) * tileSize.x, x * tileSize.y);
-        triangles[2].position = sf::Vector2f(y * tileSize.x, (x + 1) * tileSize.y);
-        triangles[3].position = sf::Vector2f(y * tileSize.x, (x + 1) * tileSize.y);
-        triangles[4].position = sf::Vector2f((y + 1) * tileSize.x, x * tileSize.y);
-        triangles[5].position = sf::Vector2f((y + 1) * tileSize.x, (x + 1) * tileSize.y);
-
-        // define the 6 matching texture coordinates
-        triangles[0].texCoords = sf::Vector2f(tu * tileSize.x, tv * tileSize.y);
-        triangles[1].texCoords = sf::Vector2f((tu + 1) * tileSize.x, tv * tileSize.y);
-        triangles[2].texCoords = sf::Vector2f(tu * tileSize.x, (tv + 1) * tileSize.y);
-        triangles[3].texCoords = sf::Vector2f(tu * tileSize.x, (tv + 1) * tileSize.y);
-        triangles[4].texCoords = sf::Vector2f((tu + 1) * tileSize.x, tv * tileSize.y);
-        triangles[5].texCoords = sf::Vector2f((tu + 1) * tileSize.x, (tv + 1) * tileSize.y);
+        txx += tileSize.x / 2;
+        tyy += tileSize.y / 2;
+        m_map_labels[x][y].setPosition(sf::Vector2f(txx * 0.3, tyy * 0.3));
       }
     }
 
     return true;
   }
+
+  void set_font(sf::Font& font) { this->font = font; }
 
  private:
   virtual void draw(sf::RenderTarget& target, sf::RenderStates states) const {
@@ -125,10 +126,16 @@ class TileMap : public sf::Drawable, public sf::Transformable {
     // apply the tileset texture
     states.texture = &m_tileset_texture;
 
-    // draw the vertex array
-    target.draw(m_vertices, states);
+    for (int y = 0; y < 16; y++) {
+      for (int x = 0; x < 16; x++) {
+        target.draw(m_level_map[x][y]);
+        target.draw(m_map_labels[x][y]);
+      }
+    }
   }
 
-  sf::VertexArray m_vertices;
+  sf::Font font;
+  sf::Sprite m_level_map[16][16];
+  sf::Text m_map_labels[16][16];
   sf::Texture m_tileset_texture;
 };

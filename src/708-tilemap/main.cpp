@@ -69,6 +69,7 @@ int main() {
 
   // create the tilemap from the level_map definition
   TileMap map;
+  map.set_font(font);
   if (!map.load("assets/images/maze-tiles-180x180.png", sf::Vector2u(180, 180), japan2007, 16, 16)) {
     return -1;
   }
@@ -163,16 +164,12 @@ int main() {
 
     // mx = std::min(mx, 31 * 32.0f);
     // my = std::min(my, 31 * 32.0f);
-    sprintf(buf, "Pose: %d,%d,%d", int(robot.getPosition().x), int(robot.getPosition().y), int(robot.getRotation()));
     txt_robot_pose.setString(buf);
 
     mini_map_view.setCenter(robot.getPosition().x, robot.getPosition().y);
 
     /// and redraw the window
     window.clear();
-
-    window.setView(main_view);
-    window.draw(txt_robot_pose);
 
     // drawing is done into a view
     window.setView(main_map_view);
@@ -186,6 +183,12 @@ int main() {
     window.setView(mini_map_view);
     window.draw(map);
     window.draw(robot);
+    window.setView(main_view);
+    time = deltaClock.restart();
+    std::string txt = std::to_string(time.asMilliseconds());
+    sprintf(buf, "Pose: %d,%d,%d", int(robot.getPosition().x), int(robot.getPosition().y), int(robot.getRotation()));
+    txt_robot_pose.setString(txt);
+    window.draw(txt_robot_pose);
 
     window.display();
   }
