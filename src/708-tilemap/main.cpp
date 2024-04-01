@@ -20,6 +20,8 @@ float ui_title_height = ui_title_font_height + 5.0f;
 float window_width = main_map_size + sidebar_width + 3 * element_space;
 float window_height = main_map_size + 2 * element_space;
 
+int robot_width = 77;
+int robot_height = 100;
 /***
  * Calculate the viewport coordinates from the window coordinates
  * viewport is a rectanglular region in pixel coordinates
@@ -53,21 +55,21 @@ int main() {
   }
 
   sf::Texture robot_sprite;
-  if (!robot_sprite.loadFromFile("./assets/images/mouse-8x1.png")) {
+  if (!robot_sprite.loadFromFile("./assets/images/mouse-77x100.png")) {
     std::cerr << "Unable to load texture\n";
     exit(1);
   }
 
   sf::Sprite robot;
   robot.setTexture(robot_sprite);
-  robot.setTextureRect(sf::IntRect(32, 0, 28, 32));
-  robot.setOrigin(13, 20);
+  robot.setTextureRect(sf::IntRect(0, 0, 77, 100));
+  robot.setOrigin(35, 60);
   robot.setPosition(15 + 30 * 5, (32 * 30) - (15 + 8 * 30));
-  robot.scale(0.5, 0.5);
+  // robot.scale(0.5, 0.5);
 
   // create the tilemap from the level_map definition
   TileMap map;
-  if (!map.load("assets/images/maze-hf.png", sf::Vector2u(30, 30), level_map, 32, 32)) {
+  if (!map.load("assets/images/maze-tiles-180x180.png", sf::Vector2u(180, 180), japan2007, 16, 16)) {
     return -1;
   }
 
@@ -125,18 +127,18 @@ int main() {
     }
 
     float v = 0;
-    robot.setTextureRect(sf::IntRect(0, 0, 28, 32));
+    robot.setTextureRect(sf::IntRect(0 * robot_width, 0, robot_width, robot_height));
     if (window.hasFocus()) {
-      if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left)) {
-        robot.setTextureRect(sf::IntRect(32, 0, 28, 32));
-        robot.rotate(-3);
-      }
       if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right)) {
-        robot.setTextureRect(sf::IntRect(64, 0, 28, 32));
+        robot.setTextureRect(sf::IntRect(1 * robot_width, 0, robot_width, robot_height));
         robot.rotate(3);
       }
+      if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left)) {
+        robot.setTextureRect(sf::IntRect(2 * robot_width, 0, robot_width, robot_height));
+        robot.rotate(-3);
+      }
       if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up)) {
-        robot.setTextureRect(sf::IntRect(96, 0, 28, 32));
+        robot.setTextureRect(sf::IntRect(3 * robot_width, 0, robot_width, robot_height));
         v = 100;
       }
       if (sf::Keyboard::isKeyPressed(sf::Keyboard::Down)) {
@@ -174,6 +176,8 @@ int main() {
 
     // drawing is done into a view
     window.setView(main_map_view);
+    map.setScale(0.3, 0.3);
+    robot.setScale(0.3, 0.3);
     window.draw(map);
     window.draw(robot);
 
