@@ -12,7 +12,7 @@ float element_space = 10.0;
 float main_map_size = 960.0f;
 float sidebar_width = 300.0f;
 float sidebar_height = 600.0f;
-float mini_map_view_size = 150.0f;
+float mini_map_view_size = 360.0f;
 float mini_map_view_port_size = sidebar_width;
 
 float ui_title_font_height = 24.0f;
@@ -41,7 +41,7 @@ sf::FloatRect calculate_viewport(const sf::FloatRect& viewport_rect, const sf::F
 int main() {
   /// Any antialiasing has to be set globally when creating the window:
   sf::ContextSettings settings;
-  settings.antialiasingLevel = 8;  // the number of multisamplings to use. 4 is probably fine
+  settings.antialiasingLevel = 0;  // the number of multisamplings to use. 4 is probably fine
   /// do not let window resize
   sf::RenderWindow window{sf::VideoMode(window_width, window_height), "009 Views", sf::Style::Titlebar + sf::Style::Close, settings};
   window.setFramerateLimit(60);
@@ -64,7 +64,8 @@ int main() {
   robot.setTexture(robot_sprite);
   robot.setTextureRect(sf::IntRect(0, 0, 77, 100));
   robot.setOrigin(35, 60);
-  robot.setPosition(15 + 30 * 5, (32 * 30) - (15 + 8 * 30));
+  robot.setPosition(90, 90);
+  robot.setRotation(180.0);
   // robot.scale(0.5, 0.5);
 
   // create the tilemap from the level_map definition
@@ -102,6 +103,14 @@ int main() {
   sf::Text txt_robot_pose("m;sjfs", font, 24);
   txt_robot_pose.setFillColor(sf::Color::White);
   txt_robot_pose.setPosition(mini_map_view_port_rect.left, mini_map_view_port_rect.top - 30);
+
+  // Create a larger render texture
+  sf::RenderTexture renderTexture;
+  if (!renderTexture.create(3000, 3000)) {
+    // Error handling
+    return EXIT_FAILURE;
+  }
+
   sf::Clock deltaClock;
   while (window.isOpen()) {
     /// process all the inputs
@@ -140,10 +149,10 @@ int main() {
       }
       if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up)) {
         robot.setTextureRect(sf::IntRect(3 * robot_width, 0, robot_width, robot_height));
-        v = 100;
+        v = 360;
       }
       if (sf::Keyboard::isKeyPressed(sf::Keyboard::Down)) {
-        v = -100;
+        v = -360;
       }
     }
     char buf[100];
@@ -154,8 +163,9 @@ int main() {
     float dx = std::cos((angle - 90) * 3.14 / 180) * v;
     float dy = std::sin((angle - 90) * 3.14 / 180) * v;
     if (robot.getPosition().x + dx < 1024 && robot.getPosition().x + dx > 0) {
-      robot.move(sf::Vector2f(dx, dy) * time.asSeconds());
+      // robot.move(sf::Vector2f(dx, dy) * time.asSeconds());
     }
+    robot.move(sf::Vector2f(dx, dy) * time.asSeconds());
 
     // float mx = sf::Mouse::getPosition(window).x;
     // float my = sf::Mouse::getPosition(window).y;
@@ -164,6 +174,7 @@ int main() {
 
     // mx = std::min(mx, 31 * 32.0f);
     // my = std::min(my, 31 * 32.0f);
+
     txt_robot_pose.setString(buf);
 
     mini_map_view.setCenter(robot.getPosition().x, robot.getPosition().y);
@@ -171,23 +182,39 @@ int main() {
     /// and redraw the window
     window.clear();
 
+    // render main map
     // drawing is done into a view
     window.setView(main_map_view);
-    map.setScale(0.3, 0.3);
-    robot.setScale(0.3, 0.3);
-    window.draw(map);
-    window.draw(robot);
+    map.setScale(1, 1);
+    robot.setScale(1, 1);
 
+    renderTexture.clear();
+    renderTexture.draw(map);
+    renderTexture.draw(robot);
+    renderTexture.display();
+
+    sf::Sprite map_sprite(renderTexture.getTexture());
+    map_sprite.setScale(1.0 / 3.0, 1.0 / 3.0);
+    window.draw(map_sprite);
+
+    // render minimap
     // mini_map_view.setRotation(robot.getRotation());
     /// Stuff must be drawn on both views. Still do not know why
     window.setView(mini_map_view);
-    window.draw(map);
-    window.draw(robot);
+    map_sprite.setScale(1., 1.);
+    mini_map_view.setCenter(robot.getPosition().x, robot.getPosition().y);
+    // map.setScale(0.5, 0.5);
+    // robot.setScale(1.0 / 3.0, 1.0 / 3.0);  // map.setScale(0.5, 0.5);
+    window.draw(map_sprite);
+    // window.draw(map);
+    // window.draw(robot);
+
+    // render UI stuff
     window.setView(main_view);
     time = deltaClock.restart();
     std::string txt = std::to_string(time.asMilliseconds());
     sprintf(buf, "Pose: %d,%d,%d", int(robot.getPosition().x), int(robot.getPosition().y), int(robot.getRotation()));
-    txt_robot_pose.setString(txt);
+    txt_robot_pose.setString(buf);
     window.draw(txt_robot_pose);
 
     window.display();

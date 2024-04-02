@@ -67,8 +67,8 @@ class TileMap : public sf::Drawable, public sf::Transformable {
       return false;
     }
 
-    int texture_tile_width = (m_tileset_texture.getSize().x / tileSize.x);
-    int texture_tile_height = (m_tileset_texture.getSize().y / tileSize.y);
+    int texture_tile_width = 77;    //(m_tileset_texture.getSize().x / tileSize.x);
+    int texture_tile_height = 100;  // (m_tileset_texture.getSize().y / tileSize.y);
 
     // populate the vertex array, with two triangles per tile
     for (unsigned int x = 0; x < height; ++x) {
@@ -83,24 +83,21 @@ class TileMap : public sf::Drawable, public sf::Transformable {
         }
         tileNumber = tiles[k];
         m_map_labels[x][y].setFont(font);
-        m_map_labels[x][y].setCharacterSize(15);
+        m_map_labels[x][y].setCharacterSize(45);
         m_map_labels[x][y].setString(std::to_string(10 * k));
         m_map_labels[x][y].setFillColor(sf::Color::Yellow);
         int dx = m_map_labels[x][y].getLocalBounds().width / 2;
         int dy = m_map_labels[x][y].getLocalBounds().height / 1;
         m_map_labels[x][y].setOrigin(sf::Vector2f(dx, dy));
-        // m_map_labels[x][y].setOrigin(sf::Vector2f(0, 0));
 
         int txx = x * tileSize.x;
         int tyy = (15 - y) * tileSize.y;
-        // tileNumber = x;
 
         // find its position in the tileset texture
         int tu = tileNumber % texture_tile_width;
         tu = tileNumber;
         m_level_map[x][y].setTexture(m_tileset_texture);
-        m_level_map[x][y].setPosition(sf::Vector2f(txx * 0.3, tyy * 0.3));
-        m_level_map[x][y].setScale(0.3f, 0.3f);
+        m_level_map[x][y].setPosition(sf::Vector2f(txx, tyy));
         m_level_map[x][y].setTextureRect(sf::IntRect(tileNumber * tileSize.x, 0, tileSize.x, tileSize.y));
         if (x == 7 && (y == 7 || y == 8)) {
           m_level_map[x][y].setColor(sf::Color::Red);
@@ -109,7 +106,7 @@ class TileMap : public sf::Drawable, public sf::Transformable {
 
         txx += tileSize.x / 2;
         tyy += tileSize.y / 2;
-        m_map_labels[x][y].setPosition(sf::Vector2f(txx * 0.3, tyy * 0.3));
+        m_map_labels[x][y].setPosition(sf::Vector2f(txx, tyy));
       }
     }
 
