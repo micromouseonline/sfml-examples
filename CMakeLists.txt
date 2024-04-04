@@ -15,20 +15,20 @@ include(cmake/DefaultCompilerOptionsAndWarnings.cmake)
 
 include(FetchContent)
 FetchContent_Declare(SFML
-    GIT_REPOSITORY https://github.com/SFML/SFML.git
-    GIT_TAG 2.6.x)
+        GIT_REPOSITORY https://github.com/SFML/SFML.git
+        GIT_TAG 2.6.x)
 FetchContent_MakeAvailable(SFML)
 
 FetchContent_Declare(ImGui
-    GIT_REPOSITORY https://github.com/ocornut/imgui
-    GIT_TAG v1.89.9-docking)
+        GIT_REPOSITORY https://github.com/ocornut/imgui
+        GIT_TAG v1.89.9-docking)
 FetchContent_MakeAvailable(ImGui)
 FetchContent_GetProperties(ImGui SOURCE_DIR IMGUI_DIR)
 set(IMGUI_SFML_FIND_SFML OFF)
 
 FetchContent_Declare(ImGui-SFML
-    GIT_REPOSITORY https://github.com/SFML/imgui-sfml
-    GIT_TAG 2.6.x)
+        GIT_REPOSITORY https://github.com/SFML/imgui-sfml
+        GIT_TAG 2.6.x)
 FetchContent_MakeAvailable(ImGui-SFML)
 
 set(SFML_LIBS sfml-graphics sfml-system sfml-window)
@@ -38,6 +38,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 add_subdirectory(src/001-basic-window-and-shapes)
 add_subdirectory(src/002-shapes-and-textures)
+add_subdirectory(src/002b-sprites)
 add_subdirectory(src/003-text-and-fonts)
 add_subdirectory(src/004-events)
 add_subdirectory(src/005-mouse)
@@ -63,13 +64,13 @@ set(DATA_DEST_DIR ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/assets)
 
 # Copy data files after building the target
 add_custom_target(copy_data_files ALL
-    COMMENT "Copying data files to binary directory"
-    COMMAND ${CMAKE_COMMAND} -E make_directory ${DATA_DEST_DIR}
-    COMMAND ${CMAKE_COMMAND} -E copy_directory ${DATA_SOURCE_DIR} ${DATA_DEST_DIR}
-    DEPENDS ${DATA_SOURCE_DIR}
+        COMMENT "Copying data files to binary directory"
+        COMMAND ${CMAKE_COMMAND} -E make_directory ${DATA_DEST_DIR}
+        COMMAND ${CMAKE_COMMAND} -E copy_directory ${DATA_SOURCE_DIR} ${DATA_DEST_DIR}
+        DEPENDS ${DATA_SOURCE_DIR}
 )
 
 # Set a dependency on copy_data_files for each of your target executables
-foreach(TARGET_EXECUTABLE ${TARGET_EXECUTABLES})
+foreach (TARGET_EXECUTABLE ${TARGET_EXECUTABLES})
     add_dependencies(${TARGET_EXECUTABLE} copy_data_files)
-endforeach()
+endforeach ()

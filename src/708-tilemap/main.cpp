@@ -9,19 +9,22 @@
 /*********************************************************************************************************************/
 
 float element_space = 10.0;
-float main_map_size = 960.0f;
+float map_view_size = 960.0f;
 float sidebar_width = 300.0f;
 float sidebar_height = 600.0f;
-float mini_map_view_size = 360.0f;
+float mini_map_view_size = 300.0f;
 float mini_map_view_port_size = sidebar_width;
 
 float ui_title_font_height = 24.0f;
 float ui_title_height = ui_title_font_height + 5.0f;
-float window_width = main_map_size + sidebar_width + 3 * element_space;
-float window_height = main_map_size + 2 * element_space;
+float window_width = map_view_size + sidebar_width + 3 * element_space;
+float window_height = map_view_size + 2 * element_space;
 
 int robot_width = 77;
 int robot_height = 100;
+
+sf::Color DustyRed(217, 87, 99);
+
 /***
  * Calculate the viewport coordinates from the window coordinates
  * viewport is a rectanglular region in pixel coordinates
@@ -41,7 +44,7 @@ sf::FloatRect calculate_viewport(const sf::FloatRect& viewport_rect, const sf::F
 int main() {
   /// Any antialiasing has to be set globally when creating the window:
   sf::ContextSettings settings;
-  settings.antialiasingLevel = 0;  // the number of multisamplings to use. 4 is probably fine
+  settings.antialiasingLevel = 8;  // the number of multisamplings to use. 4 is probably fine
   /// do not let window resize
   sf::RenderWindow window{sf::VideoMode(window_width, window_height), "009 Views", sf::Style::Titlebar + sf::Style::Close, settings};
   window.setFramerateLimit(60);
@@ -63,8 +66,8 @@ int main() {
   sf::Sprite robot;
   robot.setTexture(robot_sprite);
   robot.setTextureRect(sf::IntRect(0, 0, 77, 100));
-  robot.setOrigin(35, 60);
-  robot.setPosition(90, 90);
+  robot.setOrigin(38.5, 60);
+  robot.setPosition(270, 270);
   robot.setRotation(180.0);
   // robot.scale(0.5, 0.5);
 
@@ -79,19 +82,19 @@ int main() {
   /// This rectangle is the location of the main map in the window
   sf::FloatRect main_map_view_port_rect(element_space,                //
                                         element_space,                //
-                                        main_map_size, main_map_size  //
+                                        map_view_size, map_view_size  //
   );
 
   /// This rectangle is the location of the mini map in the window
-  sf::FloatRect mini_map_view_port_rect(main_map_size + 2 * element_space,                        //
-                                        main_map_size + element_space - mini_map_view_port_size,  //
+  sf::FloatRect mini_map_view_port_rect(map_view_size + 2 * element_space,                        //
+                                        map_view_size + element_space - mini_map_view_port_size,  //
                                         mini_map_view_port_size, mini_map_view_port_size          //
   );
 
   sf::FloatRect visibleArea(0, 0, (float)window.getSize().x, (float)window.getSize().y);
 
   /// view the entire map
-  sf::View main_map_view(sf::FloatRect(0, 0, main_map_size, main_map_size));
+  sf::View main_map_view(sf::FloatRect(0, 0, map_view_size, map_view_size));
   main_map_view.setViewport(calculate_viewport(main_map_view_port_rect, visibleArea));
 
   /// view the mini map
@@ -106,7 +109,7 @@ int main() {
 
   // Create a larger render texture
   sf::RenderTexture renderTexture;
-  if (!renderTexture.create(3000, 3000)) {
+  if (!renderTexture.create(16 * 180, 16 * 180)) {
     // Error handling
     return EXIT_FAILURE;
   }
@@ -167,8 +170,7 @@ int main() {
     }
     robot.move(sf::Vector2f(dx, dy) * time.asSeconds());
 
-    // float mx = sf::Mouse::getPosition(window).x;
-    // float my = sf::Mouse::getPosition(window).y;
+    sf::Vector2i mousePos = sf::Mouse::getPosition(window);
     // mx = std::max(mx, 32.0f);
     // my = std::max(my, 32.0f);
 
@@ -182,19 +184,32 @@ int main() {
     /// and redraw the window
     window.clear();
 
+    /// draw the frame around the maze
+    window.setView(main_view);
+    sf::RectangleShape frame(sf::Vector2f(map_view_size + 6, map_view_size + 6));
+    frame.setFillColor(DustyRed);
+    frame.setPosition(main_map_view_port_rect.left - 3.0f, main_map_view_port_rect.top - 3.0f);
+    window.draw(frame);
+
     // render main map
     // drawing is done into a view
     window.setView(main_map_view);
+    // Convert the mouse position to the map view
+    float scale = map_view_size / renderTexture.getSize().x;
+    sf::Vector2f worldPos = window.mapPixelToCoords(mousePos);
+    int cellSize = scale * 180;
+    int cellx = worldPos.x / cellSize;
+    int celly = 16 - worldPos.y / cellSize;
+    map.clear_colours();
+    map.set_cell_colour(cellx, celly, sf::Color::Green);
     map.setScale(1, 1);
     robot.setScale(1, 1);
-
     renderTexture.clear();
     renderTexture.draw(map);
     renderTexture.draw(robot);
     renderTexture.display();
-
     sf::Sprite map_sprite(renderTexture.getTexture());
-    map_sprite.setScale(1.0 / 3.0, 1.0 / 3.0);
+    map_sprite.setScale(scale, scale);
     window.draw(map_sprite);
 
     // render minimap
@@ -203,18 +218,19 @@ int main() {
     window.setView(mini_map_view);
     map_sprite.setScale(1., 1.);
     mini_map_view.setCenter(robot.getPosition().x, robot.getPosition().y);
-    // map.setScale(0.5, 0.5);
-    // robot.setScale(1.0 / 3.0, 1.0 / 3.0);  // map.setScale(0.5, 0.5);
     window.draw(map_sprite);
-    // window.draw(map);
-    // window.draw(robot);
 
     // render UI stuff
     window.setView(main_view);
     time = deltaClock.restart();
-    std::string txt = std::to_string(time.asMilliseconds());
+    std::string txt = "Time: " + std::to_string(time.asMilliseconds()) + "\n";
+    txt += "Mouse: " + std::to_string(mousePos.x) + "," + std::to_string(mousePos.y) + "\n";
+    txt += "Map: " + std::to_string((int)worldPos.x) + "," + std::to_string((int)worldPos.y) + "\n";
+    txt += "Cell: " + std::to_string((int)cellx) + "," + std::to_string((int)celly) + "\n";
     sprintf(buf, "Pose: %d,%d,%d", int(robot.getPosition().x), int(robot.getPosition().y), int(robot.getRotation()));
     txt_robot_pose.setString(buf);
+    txt_robot_pose.setString(txt);
+    txt_robot_pose.setPosition(mini_map_view_port_rect.left, mini_map_view_port_rect.top - txt_robot_pose.getLocalBounds().height);
     window.draw(txt_robot_pose);
 
     window.display();

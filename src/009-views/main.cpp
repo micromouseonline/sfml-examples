@@ -9,7 +9,7 @@
 /*********************************************************************************************************************/
 
 float element_space = 10.0;
-float main_map_size = 960.0f;
+float map_view_size = 960.0f;
 float sidebar_width = 300.0f;
 float sidebar_height = 600.0f;
 float mini_map_view_size = 150.0f;
@@ -17,8 +17,8 @@ float mini_map_view_port_size = sidebar_width;
 
 float ui_title_font_height = 24.0f;
 float ui_title_height = ui_title_font_height + 5.0f;
-float window_width = main_map_size + sidebar_width + 3 * element_space;
-float window_height = main_map_size + 2 * element_space;
+float window_width = map_view_size + sidebar_width + 3 * element_space;
+float window_height = map_view_size + 2 * element_space;
 
 /***
  * Calculate the viewport coordinates from the window coordinates
@@ -75,19 +75,19 @@ int main() {
   /// This rectangle is the location of the main map in the window
   sf::FloatRect main_map_view_port_rect(element_space,                //
                                         element_space,                //
-                                        main_map_size, main_map_size  //
+                                        map_view_size, map_view_size  //
   );
 
   /// This rectangle is the location of the mini map in the window
-  sf::FloatRect mini_map_view_port_rect(main_map_size + 2 * element_space,                        //
-                                        main_map_size + element_space - mini_map_view_port_size,  //
+  sf::FloatRect mini_map_view_port_rect(map_view_size + 2 * element_space,                        //
+                                        map_view_size + element_space - mini_map_view_port_size,  //
                                         mini_map_view_port_size, mini_map_view_port_size          //
   );
 
   sf::FloatRect visibleArea(0, 0, (float)window.getSize().x, (float)window.getSize().y);
 
   /// view the entire map
-  sf::View main_map_view(sf::FloatRect(0, 0, main_map_size, main_map_size));
+  sf::View main_map_view(sf::FloatRect(0, 0, map_view_size, map_view_size));
   main_map_view.setViewport(calculate_viewport(main_map_view_port_rect, visibleArea));
 
   /// view the mini map

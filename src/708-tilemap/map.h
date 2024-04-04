@@ -67,10 +67,6 @@ class TileMap : public sf::Drawable, public sf::Transformable {
       return false;
     }
 
-    int texture_tile_width = 77;    //(m_tileset_texture.getSize().x / tileSize.x);
-    int texture_tile_height = 100;  // (m_tileset_texture.getSize().y / tileSize.y);
-
-    // populate the vertex array, with two triangles per tile
     for (unsigned int x = 0; x < height; ++x) {
       for (unsigned int y = 0; y < width; ++y) {
         // get the current tile number
@@ -93,12 +89,10 @@ class TileMap : public sf::Drawable, public sf::Transformable {
         int txx = x * tileSize.x;
         int tyy = (15 - y) * tileSize.y;
 
-        // find its position in the tileset texture
-        int tu = tileNumber % texture_tile_width;
-        tu = tileNumber;
         m_level_map[x][y].setTexture(m_tileset_texture);
         m_level_map[x][y].setPosition(sf::Vector2f(txx, tyy));
-        m_level_map[x][y].setTextureRect(sf::IntRect(tileNumber * tileSize.x, 0, tileSize.x, tileSize.y));
+        set_tile_type(x, y, tileNumber);
+        // m_level_map[x][y].setTextureRect(sf::IntRect(tileNumber * tileSize.x, 0, tileSize.x, tileSize.y));
         if (x == 7 && (y == 7 || y == 8)) {
           m_level_map[x][y].setColor(sf::Color::Red);
         }
@@ -112,8 +106,29 @@ class TileMap : public sf::Drawable, public sf::Transformable {
 
     return true;
   }
+  void set_tile_type(int x, int y, int type) {  //
+    m_level_map[x][y].setTextureRect(sf::IntRect(type * m_tileSize.x, 0, m_tileSize.x, m_tileSize.y));
+  }
 
   void set_font(sf::Font& font) { this->font = font; }
+
+  void clear_colours() {
+    for (int x = 0; x < 16; x++) {
+      for (int y = 0; y < 16; y++) {
+        m_level_map[x][y].setColor(sf::Color::White);
+      }
+    }
+  }
+
+  void set_cell_colour(int x, int y, sf::Color colour = sf::Color(0, 0, 0, 255)) {
+    if (x < 0 || x > 15) {
+      return;
+    }
+    if (y < 0 || y > 15) {
+      return;
+    }
+    m_level_map[x][y].setColor(colour);
+  }
 
  private:
   virtual void draw(sf::RenderTarget& target, sf::RenderStates states) const {
@@ -132,6 +147,7 @@ class TileMap : public sf::Drawable, public sf::Transformable {
   }
 
   sf::Font font;
+  sf::Vector2u m_tileSize = sf::Vector2u(180, 180);
   sf::Sprite m_level_map[16][16];
   sf::Text m_map_labels[16][16];
   sf::Texture m_tileset_texture;
