@@ -1,4 +1,4 @@
-set(APP 002-shapes-and-textures)
+set(APP 002b-sprites)
 add_executable(${APP} "")
 target_sources(${APP} PRIVATE
         main.cpp
