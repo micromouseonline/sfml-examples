@@ -11,3 +11,13 @@ Tha top level CMakeLists.txt file should include any additions. Have a look for 
 Take care that the working directory of the compiled executable can see the assets as a sub-directory.
 
 No idea if this builds in Windows. Let me know. Make a pull request to offer changes for building in windows if needed.
+
+### prerequisites
+
+#### Linux
+
+sudo apt install libudev-dev
+sudo apt install libopenal-dev
+sudo apt install libvorbis-dev
+sudo apt install libflac-dev
+
