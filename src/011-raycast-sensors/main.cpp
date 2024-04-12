@@ -98,7 +98,7 @@ float sensor(sf::RenderTarget& renderTarget, sf::Image& image, sf::Vector2f pos,
   for (int i = 0; i < steps; i++) {
     sf::Vector2f hitPosition = castRay(image, sf::Color::Red, pos, start);
     float d = distance(pos, hitPosition);
-    float p = (1000.0 / d);
+    float p = (800.0 / d);
     p = p * p;
     power += p;  // distance(pos, hitPosition);
     line[1].position = hitPosition;
@@ -110,12 +110,68 @@ float sensor(sf::RenderTarget& renderTarget, sf::Image& image, sf::Vector2f pos,
   return std::min(average, 1024.0f);
 }
 
+int offsx = 10;
+int offsy = 10;
+
+sf::Vector2f get_hwall_pos(int x, int y) {
+  return sf::Vector2f(offsx + 13 + 180 * x, offsy + 0 + 180 * y);
+}
+sf::Vector2f get_vwall_pos(int x, int y) {
+  return sf::Vector2f(offsx + 0 + 180 * x, offsy + 13 + 180 * y);
+}
+void create_obstacles(sf::RenderTarget& target) {
+  sf::RectangleShape post(sf::Vector2f(12, 12));
+  post.setFillColor(sf::Color::Red);
+  sf::RectangleShape v_wall(sf::Vector2f(12, 166));
+  v_wall.setFillColor(sf::Color::Red);
+  sf::RectangleShape h_wall(sf::Vector2f(166, 12));
+  h_wall.setFillColor(sf::Color::Red);
+
+  v_wall.setPosition(120, 80 + 13);
+  for (int y = 0; y < 6; y++) {
+    for (int x = 0; x < 6; x++) {
+      post.setPosition(x * 180 + offsx, y * 180 + offsy);
+      target.draw(post);
+    }
+  }
+  for (int i = 0; i < 5; i++) {
+    v_wall.setPosition(get_vwall_pos(0, i));
+    target.draw(v_wall);
+    h_wall.setPosition(get_hwall_pos(i, 0));
+    target.draw(h_wall);
+  }
+  h_wall.setPosition(get_hwall_pos(2, 3));
+  target.draw(h_wall);
+  h_wall.setPosition(get_hwall_pos(3, 3));
+  target.draw(h_wall);
+  v_wall.setPosition(get_vwall_pos(3, 3));
+  target.draw(v_wall);
+  h_wall.setPosition(get_hwall_pos(1, 1));
+  target.draw(h_wall);
+  h_wall.setPosition(get_hwall_pos(1, 2));
+  target.draw(h_wall);
+  h_wall.setPosition(get_hwall_pos(2, 1));
+  target.draw(h_wall);
+  h_wall.setPosition(get_hwall_pos(3, 2));
+  target.draw(h_wall);
+  h_wall.setPosition(get_hwall_pos(1, 4));
+  target.draw(h_wall);
+  v_wall.setPosition(get_vwall_pos(2, 2));
+  target.draw(v_wall);
+  v_wall.setPosition(get_vwall_pos(4, 1));
+  target.draw(v_wall);
+  v_wall.setPosition(get_vwall_pos(1, 3));
+  target.draw(v_wall);
+  v_wall.setPosition(get_vwall_pos(4, 4));
+  target.draw(v_wall);
+}
+
 int main() {
   // Create the window
   /// Any antialiasing has to be set globally when creating the window:
   sf::ContextSettings settings;
   settings.antialiasingLevel = 8;  // the number of multisamplings to use. 4 is probably fine
-  sf::RenderWindow window(sf::VideoMode(1200, 800), "011 Raycast Sensors", sf::Style::Default, settings);
+  sf::RenderWindow window(sf::VideoMode(1200, 900), "011 Raycast Sensors", sf::Style::Default, settings);
 
   sf::Font font;
   if (!font.loadFromFile("./assets/fonts/consolas.ttf")) {
@@ -123,7 +179,7 @@ int main() {
   }
   // Create a RenderTexture
   sf::RenderTexture map_texture;
-  if (!map_texture.create(800, 600)) {
+  if (!map_texture.create(1200, 900)) {
     // Error handling
     return -1;
   }
@@ -131,39 +187,6 @@ int main() {
   sf::Cursor cursor;
   cursor.loadFromSystem(sf::Cursor::Cross);
   window.setMouseCursor(cursor);
-
-  // Draw some wall sections to the RenderTexture
-  sf::RectangleShape post_1(sf::Vector2f(12, 12));
-  post_1.setFillColor(sf::Color::Red);
-  post_1.setPosition(120, 80);
-
-  sf::RectangleShape post_2(sf::Vector2f(12, 12));
-  post_2.setFillColor(sf::Color::Red);
-  post_2.setPosition(120 + 180, 80);
-
-  sf::RectangleShape post_3(sf::Vector2f(12, 12));
-  post_3.setFillColor(sf::Color::Red);
-  post_3.setPosition(120, 80 + 180);
-
-  sf::RectangleShape post_4(sf::Vector2f(12, 12));
-  post_4.setFillColor(sf::Color::Red);
-  post_4.setPosition(120 + 180, 80 + 180);
-
-  sf::RectangleShape wall_1(sf::Vector2f(12, 166));
-  wall_1.setFillColor(sf::Color::Red);
-  wall_1.setPosition(120, 80 + 13);
-
-  sf::RectangleShape wall_2(sf::Vector2f(12, 166));
-  wall_2.setFillColor(sf::Color::Red);
-  wall_2.setPosition(120 + 180, 80 + 13);
-
-  sf::RectangleShape wall_3(sf::Vector2f(166, 12));
-  wall_3.setFillColor(sf::Color::Red);
-  wall_3.setPosition(120 - 167, 80 + 180);
-
-  sf::RectangleShape wall_4(sf::Vector2f(166, 12));
-  wall_4.setFillColor(sf::Color::Red);
-  wall_4.setPosition(120 + 180 + 13, 80 + 180);
 
   /// and make a mouse sprite for more pretty
   sf::Texture mouse_texture;
@@ -173,31 +196,27 @@ int main() {
   mouse.setTexture(mouse_texture);
   mouse.setTextureRect(sf::IntRect{0, 0, 77, 100});
   mouse.setOrigin(38, 60);
+  mouse.setPosition(286, 466);
 
   /// Text uses the sf::Text class
   sf::Text text;
-  text.setString("Here is some text");
+  text.setString("VVVVVVV - - - - - ________ / / / / / /");
   text.setFont(font);
   text.setCharacterSize(24);                     // in pixels, not points!
   text.setFillColor(sf::Color(255, 0, 0, 255));  // it can be any colour//  text.setStyle(sf::Text::Bold | sf::Text::Underlined);  // and have the usual styles
   text.setPosition(80, 10);
 
   map_texture.clear(sf::Color(32, 32, 32));
-  map_texture.draw(post_1);
-  map_texture.draw(post_2);
-  map_texture.draw(post_3);
-  map_texture.draw(post_4);
-  map_texture.draw(wall_1);
-  map_texture.draw(wall_2);
-  map_texture.draw(wall_3);
-  map_texture.draw(wall_4);
+  create_obstacles(map_texture);
   map_texture.draw(text);
   map_texture.display();
   // give the RenderTexture to a sprite
   sf::Sprite maze_map(map_texture.getTexture());
 
   // Main loop
+  sf::Clock clock;
   while (window.isOpen()) {
+    float dt = clock.restart().asSeconds();
     // Event handling
     sf::Event event;
     while (window.pollEvent(event)) {
@@ -232,7 +251,7 @@ int main() {
     string += "RDS: " + std::to_string((int)(rds)) + "\n";
     string += "RFS: " + std::to_string((int)(rfs)) + "\n";
     text.setString(string);
-    text.setPosition(900, 50);
+    text.setPosition(1000, 50);
     window.draw(text);
 
     // Display the window
