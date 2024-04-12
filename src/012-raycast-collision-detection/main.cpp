@@ -79,17 +79,17 @@ sf::Vector2f castRay(const sf::Image& image, sf::Color wall_colour, const sf::Ve
   return {(float)x0, (float)y0};
 }
 
-std::vector<sf::Vector2f> collision_points;
+std::vector<sf::Vector2f> base_shield_points;
 void create_collision_shield(sf::Image& image, float cx, float cy, int steps) {
-  collision_points.clear();
-  collision_points.resize(steps);
+  base_shield_points.clear();
+  base_shield_points.resize(steps);
   float radius = 60.0f;
   for (int i = 0; i < steps; i++) {
     float angle = (2 * M_PI * i) / steps;
     float x = radius * sin(angle);
     float y = radius * cos(angle);
     sf::Vector2f point = castRay(image, sf::Color::Transparent, {cx, cy}, 57.29f * angle);
-    collision_points.emplace_back(point - sf::Vector2f(cx, cy));
+    base_shield_points.emplace_back(point - sf::Vector2f(cx, cy));
   }
 }
 
@@ -217,7 +217,8 @@ int main() {
   /// That list can then be tested against the map image for collisions.
   /// Probably
 
-  create_collision_shield(the_mouse, 39, 50, 100);
+  create_collision_shield(the_mouse, 39, 60, 180);
+  std::vector<sf::Vector2f> collision_shield = base_shield_points;
 
   sf::Text text;
   text.setString("Here is some text");
@@ -241,7 +242,8 @@ int main() {
     float dt = frame_clock.restart().asSeconds();
     float omega = 180;
     float d_theta = 0;
-    float v = 0;
+    float d_s = 0;
+    float v = 200;
     sf::Event event;
     while (window.pollEvent(event)) {
       if (event.type == sf::Event::Closed) {
@@ -256,10 +258,10 @@ int main() {
         d_theta = omega * dt;
       }
       if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up)) {
-        v = 200;
+        d_s = v * dt;
       }
       if (sf::Keyboard::isKeyPressed(sf::Keyboard::Down)) {
-        v = -200;
+        d_s = -v * dt;
       }
     }
     // Clear the window
@@ -269,14 +271,13 @@ int main() {
     window.draw(mouse);
 
     sf::Clock clock;
-    /// takes about 25us
+    sf::Color shield_colour = sf::Color::Green;
     float angle = mouse.getRotation();
-    float ds = v * dt;
-    float dx = std::cos((angle - 90.0f) * 3.14f / 180.0f) * ds;
-    float dy = std::sin((angle - 90.0f) * 3.14f / 180.0f) * ds;
+    float dx = std::cos((angle - 90.0f) * 3.14f / 180.0f) * d_s;
+    float dy = std::sin((angle - 90.0f) * 3.14f / 180.0f) * d_s;
     sf::Vector2f movement(dx, dy);
     bool can_move = true;
-    for (auto& point : collision_points) {
+    for (auto& point : collision_shield) {
       if (getColorAtPixel(map_image, point + mouse.getPosition() + movement) == sf::Color::Red) {
         can_move = false;
         break;
@@ -286,10 +287,11 @@ int main() {
       if (can_move) {
         mouse.rotate(d_theta);
         mouse.move(movement);
-        mouse.setColor(sf::Color::White);
+        shield_colour = sf::Color::Transparent;
       } else {
-        mouse.setColor(sf::Color::Red);
-        /// we can get stuck here. TODO:: get unstuck
+        shield_colour = sf::Color::Red;
+        /// we can get stuck here.
+        /// TODO:: get unstuck!
       }
     }
     int phase1 = clock.restart().asMicroseconds();
@@ -300,14 +302,15 @@ int main() {
 
     /// takes about 1.2us per point
     /// this can be done once and then all the points get rotated in the loop
-    create_collision_shield(the_mouse, 39, 60, 180);
-    rotatePoints(collision_points, angle);
+    //    create_collision_shield(the_mouse, 39, 60, 180);
+    collision_shield = base_shield_points;
+    rotatePoints(collision_shield, angle);
 
     int phase3 = clock.restart().asMicroseconds();
     sf::CircleShape circle;
     circle.setRadius(1);
-    circle.setFillColor(sf::Color::Yellow);
-    for (auto& point : collision_points) {
+    circle.setFillColor(shield_colour);
+    for (auto& point : collision_shield) {
       sf::Vector2f p = mouse.getPosition() + point;
       circle.setPosition(p);
       window.draw(circle);  // about 1.2us per circle - not needed once debugged
@@ -321,9 +324,7 @@ int main() {
     string += std::to_string(phase3) + " us\n";
     string += std::to_string(phase4) + " us\n";
     string += std::to_string(phase1 + phase2 + phase3 + phase4) + " us\n";
-    sf::Vector2f hitPosition = castRay(map_image, sf::Color(), mousePosition, 270);
     string += "Mouse: " + std::to_string((int)mousePosition.x) + ", " + std::to_string((int)mousePosition.y) + "\n";
-    string += "Hit: " + std::to_string((int)hitPosition.x) + ", " + std::to_string((int)hitPosition.y) + "\n";
     text.setString(string);
     text.setPosition(900, 50);
     window.draw(text);
