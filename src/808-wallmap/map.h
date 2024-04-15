@@ -79,7 +79,7 @@ class Wall {
   explicit Wall(int id) : id(id) {
     if (is_vertical(id)) {
       int x = -3 + 6 * (id % 32);
-      int y = 3000 -
+      int y = 3000 - id;
     } else {
     }
   }
