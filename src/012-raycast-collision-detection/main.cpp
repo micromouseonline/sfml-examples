@@ -44,7 +44,7 @@ sf::Vector2f castRay(const sf::Image& image, sf::Color wall_colour, const sf::Ve
   sf::Vector2f dest = origin + range * rayDirection;
   sf::Color color = getColorAtPixel(image, static_cast<int>(origin.x), static_cast<int>(origin.y));
 
-  // Bresenham's line algorithm for efficient traversal
+  // Bresenham's line algorithm for efficient traversal - is it though?
   int x0 = static_cast<int>(origin.x);
   int y0 = static_cast<int>(origin.y);
   int x1 = static_cast<int>(dest.x);
@@ -218,7 +218,8 @@ int main() {
   /// Probably
 
   create_collision_shield(the_mouse, 39, 60, 180);
-  std::vector<sf::Vector2f> collision_shield = base_shield_points;
+  using ShieldPoints = std::vector<sf::Vector2f>;
+  ShieldPoints collision_shield = base_shield_points;
 
   sf::Text text;
   text.setString("Here is some text");
@@ -272,13 +273,20 @@ int main() {
 
     sf::Clock clock;
     sf::Color shield_colour = sf::Color::Green;
-    float angle = mouse.getRotation();
+    float angle = mouse.getRotation() + d_theta;
     float dx = std::cos((angle - 90.0f) * 3.14f / 180.0f) * d_s;
     float dy = std::sin((angle - 90.0f) * 3.14f / 180.0f) * d_s;
     sf::Vector2f movement(dx, dy);
+    /// get the entire new position, including rotation.
+    /// test that for collision and then set the flag
+    /// all we need do is transform the collision shield, not the robot
+    ShieldPoints temp_shield = collision_shield;
+    for (auto& point : temp_shield) {
+      point += mouse.getPosition() + movement;
+    }
     bool can_move = true;
-    for (auto& point : collision_shield) {
-      if (getColorAtPixel(map_image, point + mouse.getPosition() + movement) == sf::Color::Red) {
+    for (auto& point : temp_shield) {
+      if (getColorAtPixel(map_image, point) == sf::Color::Red) {
         can_move = false;
         break;
       }
@@ -308,22 +316,25 @@ int main() {
 
     int phase3 = clock.restart().asMicroseconds();
     sf::CircleShape circle;
-    circle.setRadius(1);
+    circle.setRadius(2);
+    circle.setOrigin(2, 2);
     circle.setFillColor(shield_colour);
-    for (auto& point : collision_shield) {
-      sf::Vector2f p = mouse.getPosition() + point;
-      circle.setPosition(p);
-      window.draw(circle);  // about 1.2us per circle - not needed once debugged
+    if (!can_move) {
+      for (auto& point : collision_shield) {
+        sf::Vector2f p = mouse.getPosition() + point;
+        circle.setPosition(p);
+        window.draw(circle);  // about 1.2us per circle - not needed once debugged
+      }
     }
     int phase4 = clock.restart().asMicroseconds();
 
     std::string string = "";
     string = "times:\n";
-    string += std::to_string(phase1) + " us\n";
-    string += std::to_string(phase2) + " us\n";
-    string += std::to_string(phase3) + " us\n";
-    string += std::to_string(phase4) + " us\n";
-    string += std::to_string(phase1 + phase2 + phase3 + phase4) + " us\n";
+    string += "test and move: " + std::to_string(phase1) + " us\n";
+    string += "get mouse pos: " + std::to_string(phase2) + " us\n";
+    string += "rotate shield: " + std::to_string(phase3) + " us\n";
+    string += "  draw shield: " + std::to_string(phase4) + " us\n";
+    string += "   total time: " + std::to_string(phase1 + phase2 + phase3 + phase4) + " us\n";
     string += "Mouse: " + std::to_string((int)mousePosition.x) + ", " + std::to_string((int)mousePosition.y) + "\n";
     text.setString(string);
     text.setPosition(900, 50);
