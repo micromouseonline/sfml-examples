@@ -1,5 +1,7 @@
 set(APP 808-wallmap)
-add_executable(${APP} "")
+add_executable(${APP} ""
+        walls.h
+        mazedata.h)
 target_sources(${APP} PRIVATE
         main.cpp
         japan2007ef.cpp

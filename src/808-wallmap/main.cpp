@@ -5,6 +5,8 @@
 #include <cmath>
 #include <iostream>
 #include "map.h"
+#include "maze_constants.h"
+#include "walls.h"
 #include "util.h"
 
 /*********************************************************************************************************************/
