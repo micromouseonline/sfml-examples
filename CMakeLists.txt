@@ -9,6 +9,7 @@ project("ImGui-SFML-Starter" LANGUAGES CXX)
 # Set project directories
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin/${CMAKE_BUILD_TYPE})
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/build/${CMAKE_GENERATOR_PLATFORM}/${CMAKE_BUILD_TYPE})
+option(BUILD_SHARED_LIBS "Build shared libraries" OFF)
 
 # default compiler options and warnings
 include(cmake/DefaultCompilerOptionsAndWarnings.cmake)
@@ -31,9 +32,14 @@ FetchContent_Declare(ImGui-SFML
         GIT_TAG 2.6.x)
 FetchContent_MakeAvailable(ImGui-SFML)
 
-set(SFML_LIBS sfml-graphics sfml-system sfml-window)
-set(IMGUI_LIBS ImGui-SFML::ImGui-SFML)
+include_directories(${imgui_SOURCE_DIR})
+include_directories(libs/implot)
 
+add_subdirectory(libs/implot)
+set(IMPLOT_LIBS PUBLIC implot)
+
+set(SFML_LIBS PUBLIC sfml-graphics sfml-system sfml-window)
+set(IMGUI_LIBS PUBLIC ImGui-SFML::ImGui-SFML)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 add_subdirectory(src/001-basic-window-and-shapes)
@@ -46,6 +52,7 @@ add_subdirectory(src/005-mouse)
 add_subdirectory(src/006-keyboard)
 add_subdirectory(src/007-vertex-arrays)
 add_subdirectory(src/008-tilemap)
+add_subdirectory(src/301-implot-demo)
 add_subdirectory(src/708-tilemap)
 add_subdirectory(src/808-wallmap)
 add_subdirectory(src/009-view-map)
