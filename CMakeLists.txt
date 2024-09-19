@@ -61,6 +61,7 @@ add_subdirectory(src/009-view-rendertexture)
 add_subdirectory(src/009-views)
 add_subdirectory(src/010-render-to-bitmap)
 add_subdirectory(src/011-raycast-sensors)
+add_subdirectory(src/012-raycast-collision-detection)
 
 # if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
 # file(COPY ${CMAKE_SOURCE_DIR}/resources DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})

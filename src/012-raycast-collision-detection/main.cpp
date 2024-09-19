@@ -58,7 +58,7 @@ sf::Vector2f castRay(const sf::Image& image, sf::Color wall_colour, const sf::Ve
 
   while (x0 != x1 || y0 != y1) {
     if (!isWithinBounds(image.getSize(), x0, y0)) {
-      return {(float)x1, (float)y1};
+      return {(float)x0, (float)y0};
     }
 
     color = getColorAtPixel(image, x0, y0);
@@ -79,35 +79,18 @@ sf::Vector2f castRay(const sf::Image& image, sf::Color wall_colour, const sf::Ve
   return {(float)x0, (float)y0};
 }
 
-/***
- * simulate a single sensor by casting out a fan of rays.
- * @param renderTarget  - the place we will draw the rays
- * @param image - holds the map
- * @param pos  - the position of the emitter
- * @param angle - the angle of the centre of the fan
- * @param width - the angle subtended by the fan
- * @param steps - how many rays to use in the fan
- * @return - the average distance of all the rays
- */
-float sensor(sf::RenderTarget& renderTarget, sf::Image& image, sf::Vector2f pos, float angle, float width, int steps) {
-  float power = 0;
-  float start = angle - width / 2;
-  float inc = width / steps;
-  sf::Vertex line[] = {sf::Vertex(pos), sf::Vertex(pos)};
-  line[0].color = sf::Color(255, 128, 0, 196);
+std::vector<sf::Vector2f> base_shield_points;
+void create_collision_shield(sf::Image& image, float cx, float cy, int steps) {
+  base_shield_points.clear();
+  base_shield_points.resize(steps);
+  float radius = 60.0f;
   for (int i = 0; i < steps; i++) {
-    sf::Vector2f hitPosition = castRay(image, sf::Color::Red, pos, start);
-    float d = distance(pos, hitPosition);
-    float p = (800.0 / d);
-    p = p * p;
-    power += p;  // distance(pos, hitPosition);
-    line[1].position = hitPosition;
-    line[1].color = sf::Color(255, 128, 0, 255 - d);
-    renderTarget.draw(line, 2, sf::Lines);
-    start += inc;
+    float angle = (2 * M_PI * i) / steps;
+    float x = radius * sin(angle);
+    float y = radius * cos(angle);
+    sf::Vector2f point = castRay(image, sf::Color::Transparent, {cx, cy}, 57.29f * angle);
+    base_shield_points.emplace_back(point - sf::Vector2f(cx, cy));
   }
-  float average = power / (float)steps;
-  return std::min(average, 1024.0f);
 }
 
 int offsx = 10;
@@ -166,6 +149,27 @@ void create_obstacles(sf::RenderTarget& target) {
   target.draw(v_wall);
 }
 
+// Function to rotate a point around the origin by a given angle (in radians)
+sf::Vector2f rotatePoint(const sf::Vector2f& point, float angleRad) {
+  float s = std::sin(angleRad);
+  float c = std::cos(angleRad);
+
+  float xNew = point.x * c - point.y * s;
+  float yNew = point.x * s + point.y * c;
+
+  return sf::Vector2f(xNew, yNew);
+}
+
+// Function to rotate all points in a vector around the origin by a given angle (in degrees)
+void rotatePoints(std::vector<sf::Vector2f>& points, float angleDeg) {
+  // Convert angle from degrees to radians
+  float angleRad = angleDeg * (3.14159f / 180.f);
+
+  for (auto& point : points) {
+    point = rotatePoint(point, angleRad);
+  }
+}
+
 int main() {
   // Create the window
   /// Any antialiasing has to be set globally when creating the window:
@@ -179,7 +183,7 @@ int main() {
   }
   // Create a RenderTexture
   sf::RenderTexture map_texture;
-  if (!map_texture.create(1200, 900)) {
+  if (!map_texture.create(800, 800)) {
     // Error handling
     return -1;
   }
@@ -190,70 +194,140 @@ int main() {
 
   /// and make a mouse sprite for more pretty
   sf::Texture mouse_texture;
-  mouse_texture.loadFromFile("./assets/images/mouse-77x100.png");
+  sf::Image mouse_images;
+  mouse_images.loadFromFile("./assets/images/mouse-77x100.png");
+  mouse_texture.loadFromImage(mouse_images);
 
   sf::Sprite mouse;
   mouse.setTexture(mouse_texture);
   mouse.setTextureRect(sf::IntRect{0, 0, 77, 100});
-  mouse.setOrigin(38, 60);
+  mouse.setOrigin(39, 60);
   mouse.setPosition(286, 466);
 
-  /// Text uses the sf::Text class
+  /// lets create an image of one frame of the mouse
+  sf::IntRect r(0, 0, 77, 100);
+  sf::Image the_mouse;
+  sf::Color bg(16, 16, 16, 0);
+  the_mouse.create(r.width, r.height, bg);
+  the_mouse.copy(mouse_images, 0, 0, r);
+
+  /// Now we want to cast rays out from the centre until we see the background
+  /// colour or fall off the edge
+  /// Use this to get a list of pixel addresses surrounding the robot image
+  /// That list can then be tested against the map image for collisions.
+  /// Probably
+
+  create_collision_shield(the_mouse, 39, 60, 180);
+  std::vector<sf::Vector2f> collision_shield = base_shield_points;
+
   sf::Text text;
-  text.setString("VVVVVVV - - - - - ________ / / / / / /");
+  text.setString("Here is some text");
   text.setFont(font);
   text.setCharacterSize(24);                     // in pixels, not points!
   text.setFillColor(sf::Color(255, 0, 0, 255));  // it can be any colour//  text.setStyle(sf::Text::Bold | sf::Text::Underlined);  // and have the usual styles
-  text.setPosition(80, 10);
 
   map_texture.clear(sf::Color(32, 32, 32));
   create_obstacles(map_texture);
-  map_texture.draw(text);
   map_texture.display();
+
+  /// this is really slow - takes about 200us
+  sf::Image map_image = map_texture.getTexture().copyToImage();
   // give the RenderTexture to a sprite
   sf::Sprite maze_map(map_texture.getTexture());
 
+  sf::Clock frame_clock;
   // Main loop
-  sf::Clock clock;
   while (window.isOpen()) {
-    float dt = clock.restart().asSeconds();
     // Event handling
+    float dt = frame_clock.restart().asSeconds();
+    float omega = 180;
+    float d_theta = 0;
+    float d_s = 0;
+    float v = 200;
     sf::Event event;
     while (window.pollEvent(event)) {
       if (event.type == sf::Event::Closed) {
         window.close();
       }
     }
-
-    std::string string = "";
-    sf::Vector2f mousePosition = static_cast<sf::Vector2f>(sf::Mouse::getPosition(window));
-
+    if (window.hasFocus()) {
+      if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left)) {
+        d_theta = -omega * dt;
+      }
+      if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right)) {
+        d_theta = omega * dt;
+      }
+      if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up)) {
+        d_s = v * dt;
+      }
+      if (sf::Keyboard::isKeyPressed(sf::Keyboard::Down)) {
+        d_s = -v * dt;
+      }
+    }
     // Clear the window
     window.clear(sf::Color::Black);
     window.draw(maze_map);
-    mouse.setPosition(mousePosition);
+    //    mouse.setPosition(mousePosition);
     window.draw(mouse);
 
-    sf::Image image = map_texture.getTexture().copyToImage();
     sf::Clock clock;
-    float power = 0;
-    /// Todo: this all needs automating in a class
-    float lfs = sensor(window, image, mouse.getPosition() + sf::Vector2f(-30, -40), -90 - 10, 5, 5 * 10);
-    float lds = sensor(window, image, mouse.getPosition() + sf::Vector2f(-10, -55), -180 + 30, 5, 5 * 10);
-    float rds = sensor(window, image, mouse.getPosition() + sf::Vector2f(+10, -55), 0 - 30, 5, 5 * 10);
-    float rfs = sensor(window, image, mouse.getPosition() + sf::Vector2f(+30, -40), -90 + 10, 5, 5 * 10);
-    string = std::to_string(clock.restart().asMicroseconds()) + " us\n";
-    sf::Vector2f hitPosition = castRay(map_texture.getTexture().copyToImage(), sf::Color(), mousePosition, 270);
-    string += "Mouse: " + std::to_string((int)mousePosition.x) + ", " + std::to_string((int)mousePosition.y) + "\n";
-    string += "Hit: " + std::to_string((int)hitPosition.x) + ", " + std::to_string((int)hitPosition.y) + "\n";
-    string += "LFS: " + std::to_string((int)(lfs)) + "\n";
-    string += "LDS: " + std::to_string((int)(lds)) + "\n";
-    string += "RDS: " + std::to_string((int)(rds)) + "\n";
-    string += "RFS: " + std::to_string((int)(rfs)) + "\n";
-    text.setString(string);
-    text.setPosition(1000, 50);
-    window.draw(text);
+    sf::Color shield_colour = sf::Color::Green;
+    float angle = mouse.getRotation();
+    float dx = std::cos((angle - 90.0f) * 3.14f / 180.0f) * d_s;
+    float dy = std::sin((angle - 90.0f) * 3.14f / 180.0f) * d_s;
+    sf::Vector2f movement(dx, dy);
+    bool can_move = true;
+    for (auto& point : collision_shield) {
+      if (getColorAtPixel(map_image, point + mouse.getPosition() + movement) == sf::Color::Red) {
+        can_move = false;
+        break;
+      }
+    }
+    if (mouse.getPosition().x + dx < 1024 && mouse.getPosition().x + dx > 0) {
+      if (can_move) {
+        mouse.rotate(d_theta);
+        mouse.move(movement);
+        shield_colour = sf::Color::Transparent;
+      } else {
+        shield_colour = sf::Color::Red;
+        /// we can get stuck here.
+        /// TODO:: get unstuck!
+      }
+    }
+    int phase1 = clock.restart().asMicroseconds();
 
+    sf::Vector2f mousePosition = static_cast<sf::Vector2f>(sf::Mouse::getPosition(window));
+
+    int phase2 = clock.restart().asMicroseconds();
+
+    /// takes about 1.2us per point
+    /// this can be done once and then all the points get rotated in the loop
+    //    create_collision_shield(the_mouse, 39, 60, 180);
+    collision_shield = base_shield_points;
+    rotatePoints(collision_shield, angle);
+
+    int phase3 = clock.restart().asMicroseconds();
+    sf::CircleShape circle;
+    circle.setRadius(1);
+    circle.setFillColor(shield_colour);
+    for (auto& point : collision_shield) {
+      sf::Vector2f p = mouse.getPosition() + point;
+      circle.setPosition(p);
+      window.draw(circle);  // about 1.2us per circle - not needed once debugged
+    }
+    int phase4 = clock.restart().asMicroseconds();
+
+    std::string string = "";
+    string = "times:\n";
+    string += std::to_string(phase1) + " us\n";
+    string += std::to_string(phase2) + " us\n";
+    string += std::to_string(phase3) + " us\n";
+    string += std::to_string(phase4) + " us\n";
+    string += std::to_string(phase1 + phase2 + phase3 + phase4) + " us\n";
+    string += "Mouse: " + std::to_string((int)mousePosition.x) + ", " + std::to_string((int)mousePosition.y) + "\n";
+    text.setString(string);
+    text.setPosition(900, 50);
+    window.draw(text);
     // Display the window
     window.display();
   }
