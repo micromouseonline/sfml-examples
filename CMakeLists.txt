@@ -12,6 +12,9 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/build/${CMAKE_GENERATOR_P
 
 # default compiler options and warnings
 include(cmake/DefaultCompilerOptionsAndWarnings.cmake)
+# static linking for easy installation
+option(BUILD_SHARED_LIBS "Build shared libraries" OFF)
+
 
 include(FetchContent)
 FetchContent_Declare(SFML
