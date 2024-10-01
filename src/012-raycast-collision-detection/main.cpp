@@ -2,7 +2,7 @@
 #include <cmath>
 #include <iostream>
 #include <string>
-
+#include "ExpFilter.h"
 // Returns distance between points
 inline float distance(const sf::Vector2f& a, const sf::Vector2f& b) {
   float dx = a.x - b.x;
@@ -235,16 +235,16 @@ int main() {
   sf::Image map_image = map_texture.getTexture().copyToImage();
   // give the RenderTexture to a sprite
   sf::Sprite maze_map(map_texture.getTexture());
-
+  ExpFilter<float> frame_time(0.99);
   sf::Clock frame_clock;
   // Main loop
   while (window.isOpen()) {
     // Event handling
     float dt = frame_clock.restart().asSeconds();
+    float v = 200;
     float omega = 180;
     float d_theta = 0;
     float d_s = 0;
-    float v = 200;
     sf::Event event;
     while (window.pollEvent(event)) {
       if (event.type == sf::Event::Closed) {
@@ -334,7 +334,9 @@ int main() {
     string += "get mouse pos: " + std::to_string(phase2) + " us\n";
     string += "rotate shield: " + std::to_string(phase3) + " us\n";
     string += "  draw shield: " + std::to_string(phase4) + " us\n";
-    string += "   total time: " + std::to_string(phase1 + phase2 + phase3 + phase4) + " us\n";
+    int total = phase1 + phase2 + phase3 + phase4;
+    frame_time.update(total);
+    string += "   total time: " + std::to_string(int(frame_time.value)) + " us\n";
     string += "Mouse: " + std::to_string((int)mousePosition.x) + ", " + std::to_string((int)mousePosition.y) + "\n";
     text.setString(string);
     text.setPosition(900, 50);
