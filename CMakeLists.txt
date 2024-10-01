@@ -17,11 +17,14 @@ option(BUILD_SHARED_LIBS "Build shared libraries" OFF)
 
 
 include(FetchContent)
+
+################################
 FetchContent_Declare(SFML
         GIT_REPOSITORY https://github.com/SFML/SFML.git
         GIT_TAG 2.6.x)
 FetchContent_MakeAvailable(SFML)
 
+################################
 FetchContent_Declare(ImGui
         GIT_REPOSITORY https://github.com/ocornut/imgui
         GIT_TAG v1.89.9-docking)
@@ -33,6 +36,15 @@ FetchContent_Declare(ImGui-SFML
         GIT_REPOSITORY https://github.com/SFML/imgui-sfml
         GIT_TAG 2.6.x)
 FetchContent_MakeAvailable(ImGui-SFML)
+
+################################
+FetchContent_Declare(
+        fmt
+        GIT_REPOSITORY https://github.com/fmtlib/fmt.git
+        GIT_TAG 8.0.1  # You can specify the version you need
+)
+FetchContent_MakeAvailable(fmt)
+################################
 
 set(SFML_LIBS sfml-graphics sfml-system sfml-window)
 set(IMGUI_LIBS ImGui-SFML::ImGui-SFML)
@@ -64,8 +76,20 @@ add_subdirectory(src/012-raycast-collision-detection)
 # file(COPY ${CMAKE_SOURCE_DIR}/resources DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${CMAKE_BUILD_TYPE})
 # endif()
 
+
+#if (WIN32)
+#    add_custom_command(
+#            TARGET ${PROJECT_NAME}
+#            COMMENT "Copy OpenAL DLL"
+#            PRE_BUILD COMMAND ${CMAKE_COMMAND} -E copy ${SFML_SOURCE_DIR}/extlibs/bin/$<IF:$<EQUAL:${CMAKE_SIZEOF_VOID_P},8>,x64,x86>/openal32.dll $<TARGET_FILE_DIR:${PROJECT_NAME}>
+#            VERBATIM)
+#endif ()
+
+################################ be sure to copy any assets into the binary directory
+
 # Define the directory containing your asset files
 set(DATA_SOURCE_DIR ${CMAKE_SOURCE_DIR}/assets)
+
 
 # Define the directory where you want to copy the data files
 set(DATA_DEST_DIR ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/assets)
