@@ -143,7 +143,7 @@ class WallData {
   WallData(int x, int y, Direction wall_direction) { reset(); }
 
   void reset() {
-    m_is_exit = true;
+    m_state = UNKNOWN;
     m_is_active = false;
     m_is_queued = false;
     m_was_queued = false;
@@ -161,9 +161,9 @@ class WallData {
 
   void set_queued(bool state) { m_is_queued = state; }
 
-  bool is_exit() const { return m_is_exit; }
+  bool is_exit() const { return m_state == EXIT; }
 
-  void set_exit(bool state) { m_is_exit = state; }
+  void set_state(WallState state) { m_state = state; }
 
   void set_on_path(bool state) { m_is_on_path = state; }
 
@@ -181,14 +181,13 @@ class WallData {
 
   void set_predecessor(int index) { m_predecessor = index; }
 
-  bool m_was_queued = false;
-
  private:
   bool m_is_queued = false;
+  bool m_was_queued = false;
   bool m_is_active = false;
-  bool m_is_exit = true;
   bool m_is_on_path = false;
   uint16_t m_predecessor = 0;        // the wall we came from to get here
   Direction m_direction = DIR_NONE;  // The direction we are passing through this wall
   uint16_t m_cost = UINT16_MAX;
+  WallState m_state = UNKNOWN;
 };

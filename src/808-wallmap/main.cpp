@@ -6,8 +6,8 @@
 #include <iostream>
 #include "map.h"
 #include "maze_constants.h"
-#include "walls.h"
 #include "util.h"
+#include "walls.h"
 
 /*********************************************************************************************************************/
 
@@ -176,12 +176,12 @@ int main() {
     sf::Time time = deltaClock.restart();
     float angle = robot.getRotation();
     float ds = v * time.asSeconds();
-    float dx = std::cos((angle - 90) * 3.14 / 180) * v;
-    float dy = std::sin((angle - 90) * 3.14 / 180) * v;
+    float dx = std::cos((angle - 90) * 3.14 / 180) * ds;
+    float dy = std::sin((angle - 90) * 3.14 / 180) * ds;
     if (robot.getPosition().x + dx < 1024 && robot.getPosition().x + dx > 0) {
       // robot.move(sf::Vector2f(dx, dy) * time.asSeconds());
     }
-    robot.move(sf::Vector2f(dx, dy) * time.asSeconds());
+    robot.move(sf::Vector2f(dx, dy));
 
     sf::Vector2i mousePos = sf::Mouse::getPosition(window);
     // mx = std::max(mx, 32.0f);
