@@ -14,6 +14,21 @@ extern int* japan2007ef_maz;
  *
  */
 
+class Wall {
+ public:
+  int id;
+  WallState state = UNKNOWN;
+  sf::FloatRect rect;
+
+  explicit Wall(int id) : id(id) {
+    if (is_vertical(id)) {
+      int x = -3 + 6 * (id % 32);
+      int y = 3000 - id;
+    } else {
+    }
+  }
+};
+
 class TileMap : public sf::Drawable, public sf::Transformable {
  public:
   bool load_textures(const std::string& tileset, sf::Vector2u tileSize) {
