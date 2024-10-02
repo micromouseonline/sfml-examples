@@ -9,22 +9,23 @@ project("sfml-tutorial" LANGUAGES CXX)
 # Set project directories
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin/${CMAKE_BUILD_TYPE})
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/build/${CMAKE_GENERATOR_PLATFORM}/${CMAKE_BUILD_TYPE})
+option(BUILD_SHARED_LIBS "Build shared libraries" OFF)
 
 # default compiler options and warnings
 include(cmake/DefaultCompilerOptionsAndWarnings.cmake)
+
 # static linking for easy installation
 option(BUILD_SHARED_LIBS "Build shared libraries" OFF)
 
-
 include(FetchContent)
 
-################################
+# ###############################
 FetchContent_Declare(SFML
         GIT_REPOSITORY https://github.com/SFML/SFML.git
         GIT_TAG 2.6.x)
 FetchContent_MakeAvailable(SFML)
 
-################################
+# ###############################
 FetchContent_Declare(ImGui
         GIT_REPOSITORY https://github.com/ocornut/imgui
         GIT_TAG v1.89.9-docking)
@@ -37,18 +38,25 @@ FetchContent_Declare(ImGui-SFML
         GIT_TAG 2.6.x)
 FetchContent_MakeAvailable(ImGui-SFML)
 
-################################
+# ###############################
 FetchContent_Declare(
         fmt
         GIT_REPOSITORY https://github.com/fmtlib/fmt.git
-        GIT_TAG 8.0.1  # You can specify the version you need
+        GIT_TAG 8.0.1 # You can specify the version you need
 )
 FetchContent_MakeAvailable(fmt)
-################################
 
+# ###############################
 set(SFML_LIBS sfml-graphics sfml-system sfml-window)
 set(IMGUI_LIBS ImGui-SFML::ImGui-SFML)
+include_directories(${imgui_SOURCE_DIR})
+include_directories(libs/implot)
 
+add_subdirectory(libs/implot)
+set(IMPLOT_LIBS PUBLIC implot)
+
+set(SFML_LIBS PUBLIC sfml-graphics sfml-system sfml-window)
+set(IMGUI_LIBS PUBLIC ImGui-SFML::ImGui-SFML)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 add_subdirectory(src/001-basic-window-and-shapes)
@@ -61,6 +69,8 @@ add_subdirectory(src/005-mouse)
 add_subdirectory(src/006-keyboard)
 add_subdirectory(src/007-vertex-arrays)
 add_subdirectory(src/008-tilemap)
+add_subdirectory(src/201-imgui-basic)
+add_subdirectory(src/301-implot-demo)
 add_subdirectory(src/708-tilemap)
 add_subdirectory(src/808-wallmap)
 add_subdirectory(src/009-view-map)
@@ -76,20 +86,18 @@ add_subdirectory(src/012-raycast-collision-detection)
 # file(COPY ${CMAKE_SOURCE_DIR}/resources DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${CMAKE_BUILD_TYPE})
 # endif()
 
+# if (WIN32)
+# add_custom_command(
+# TARGET ${PROJECT_NAME}
+# COMMENT "Copy OpenAL DLL"
+# PRE_BUILD COMMAND ${CMAKE_COMMAND} -E copy ${SFML_SOURCE_DIR}/extlibs/bin/$<IF:$<EQUAL:${CMAKE_SIZEOF_VOID_P},8>,x64,x86>/openal32.dll $<TARGET_FILE_DIR:${PROJECT_NAME}>
+# VERBATIM)
+# endif ()
 
-#if (WIN32)
-#    add_custom_command(
-#            TARGET ${PROJECT_NAME}
-#            COMMENT "Copy OpenAL DLL"
-#            PRE_BUILD COMMAND ${CMAKE_COMMAND} -E copy ${SFML_SOURCE_DIR}/extlibs/bin/$<IF:$<EQUAL:${CMAKE_SIZEOF_VOID_P},8>,x64,x86>/openal32.dll $<TARGET_FILE_DIR:${PROJECT_NAME}>
-#            VERBATIM)
-#endif ()
-
-################################ be sure to copy any assets into the binary directory
+# ############################### be sure to copy any assets into the binary directory
 
 # Define the directory containing your asset files
 set(DATA_SOURCE_DIR ${CMAKE_SOURCE_DIR}/assets)
-
 
 # Define the directory where you want to copy the data files
 set(DATA_DEST_DIR ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/assets)
@@ -103,6 +111,6 @@ add_custom_target(copy_data_files ALL
 )
 
 # Set a dependency on copy_data_files for each of your target executables
-foreach (TARGET_EXECUTABLE ${TARGET_EXECUTABLES})
-    add_dependencies(${TARGET_EXECUTABLE} copy_data_files)
-endforeach ()
+foreach(TARGET_EXECUTABLE ${TARGET_EXECUTABLES})
+        add_dependencies(${TARGET_EXECUTABLE} copy_data_files)
+endforeach()
