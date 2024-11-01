@@ -17,22 +17,23 @@ extern int* japan2007ef_maz;
 
 class Wall {
  public:
-  int id;
+  int m_id;
   WallState state = UNKNOWN;
   sf::FloatRect rect;
 
-  explicit Wall(int id) : id(id) {
-    if (is_vertical(id)) {
-      int x = -3 + 6 * (id % 32);
-      int y = 3000 - id;
-    } else {
-    }
+  explicit Wall(int id) : m_id(id) {
+    //    if (is_vertical(id)) {
+    //      int x = -3 + 6 * (id % 32);
+    //      int y = 3000 - id;
+    //    } else {
+    //    }
   }
 };
 
 class TileMap : public sf::Drawable, public sf::Transformable {
  public:
   bool load_textures(const std::string& tileset, sf::Vector2u tileSize) {
+    (void)tileSize;
     // load the tileset texture
     if (!m_tileset_texture.loadFromFile(tileset)) {
       return false;
@@ -54,7 +55,7 @@ class TileMap : public sf::Drawable, public sf::Transformable {
           tileNumber = 0;
         }
         tileNumber = tiles[k];
-        m_map_labels[x][y].setFont(font);
+        m_map_labels[x][y].setFont(m_font);
         m_map_labels[x][y].setCharacterSize(45);
         m_map_labels[x][y].setString(std::to_string(10 * k));
         m_map_labels[x][y].setFillColor(sf::Color::Yellow);
@@ -86,7 +87,7 @@ class TileMap : public sf::Drawable, public sf::Transformable {
     m_level_map[x][y].setTextureRect(sf::IntRect(type * m_tileSize.x, 0, m_tileSize.x, m_tileSize.y));
   }
 
-  void set_font(sf::Font& font) { this->font = font; }
+  void set_font(sf::Font& font) { this->m_font = font; }
 
   void clear_colours() {
     for (int x = 0; x < 16; x++) {
@@ -122,7 +123,7 @@ class TileMap : public sf::Drawable, public sf::Transformable {
     }
   }
 
-  sf::Font font;
+  sf::Font m_font;
   sf::Vector2u m_tileSize = sf::Vector2u(180, 180);
   sf::Sprite m_level_map[16][16];
   sf::Text m_map_labels[16][16];

@@ -140,7 +140,7 @@ inline void center_number(char *str, int width, uint16_t num) {
 class WallData {
  public:
   WallData() { reset(); };
-  WallData(int x, int y, Direction wall_direction) { reset(); }
+  //  WallData(int x, int y, Direction wall_direction) { reset(); }
 
   void reset() {
     m_state = UNKNOWN;
