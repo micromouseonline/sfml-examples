@@ -4,6 +4,7 @@
 #include <vector>
 #include "mazedata.h"
 #include "util.h"
+#include "walls.h"
 
 // clang-format on
 extern int* japan2007ef_maz;
