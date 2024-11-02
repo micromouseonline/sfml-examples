@@ -1,10 +1,14 @@
-#include <math.h>
 #include <SFML/Graphics.hpp>
 #include <SFML/System/Clock.hpp>
 #include <SFML/Window/Event.hpp>
+#include <cmath>
 #include <iostream>
 #include "imgui-SFML.h"
 #include "imgui.h"
+// sadly the definition of M_PI is nor platform independent
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
 
 struct Properties {
   float radius = 20.0f;
@@ -71,7 +75,7 @@ int main() {
     draw_divider();
 
     static bool show_demo = false;
-    bool cb_changed = ImGui::Checkbox("Show ImGui Demo", &show_demo);
+    //    bool cb_changed = ImGui::Checkbox("Show ImGui Demo", &show_demo);
     if (ImGui::SliderInt("Points", &properties.points, 3, 36)) {
       shape.setPointCount(properties.points);
     }
