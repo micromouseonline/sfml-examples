@@ -46,7 +46,7 @@ int main() {
   sf::ContextSettings settings;
   settings.antialiasingLevel = 8;  // the number of multisamplings to use. 4 is probably fine
   /// do not let window resize
-  sf::RenderWindow window{sf::VideoMode(window_width, window_height), "009 Views", sf::Style::Titlebar + sf::Style::Close, settings};
+  sf::RenderWindow window{sf::VideoMode(window_width, window_height), "708-tilemap", sf::Style::Titlebar + sf::Style::Close, settings};
   window.setFramerateLimit(60);
 
   sf::Clock up_time{};
