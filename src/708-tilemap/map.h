@@ -84,7 +84,7 @@ class TileMap : public sf::Drawable, public sf::Transformable {
           tileNumber = 0;
         }
         tileNumber = tiles[k];
-        m_map_labels[x][y].setFont(font);
+        m_map_labels[x][y].setFont(m_font);
         m_map_labels[x][y].setCharacterSize(45);
         m_map_labels[x][y].setString(std::to_string(10 * k));
         m_map_labels[x][y].setFillColor(sf::Color::Yellow);
@@ -116,7 +116,7 @@ class TileMap : public sf::Drawable, public sf::Transformable {
     m_level_map[x][y].setTextureRect(sf::IntRect(type * m_tileSize.x, 0, m_tileSize.x, m_tileSize.y));
   }
 
-  void set_font(sf::Font& font) { this->font = font; }
+  void set_font(sf::Font& font) { this->m_font = font; }
 
   void clear_colours() {
     for (int x = 0; x < 16; x++) {
@@ -152,7 +152,7 @@ class TileMap : public sf::Drawable, public sf::Transformable {
     }
   }
 
-  sf::Font font;
+  sf::Font m_font;
   sf::Vector2u m_tileSize = sf::Vector2u(180, 180);
   sf::Sprite m_level_map[16][16];
   sf::Text m_map_labels[16][16];
