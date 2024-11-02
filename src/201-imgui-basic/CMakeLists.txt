@@ -7,6 +7,9 @@ target_compile_options(${APP} PRIVATE
         ${DEFAULT_COMPILER_OPTIONS_AND_WARNINGS}
 )
 
+add_compiler_info(${APP})
+#add_data_file_copy(${APP})
+
 target_link_libraries(
         ${APP} PRIVATE
         ${SANITIZER_FLAGS}

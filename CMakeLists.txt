@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.14)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-
+set(CMAKE_VERBOSE_MAKEFILE ON)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
@@ -12,7 +12,31 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/build/${CMAKE_GENERATOR_P
 option(BUILD_SHARED_LIBS "Build shared libraries" OFF)
 
 # default compiler options and warnings
-include(cmake/DefaultCompilerOptionsAndWarnings.cmake)
+include(${CMAKE_SOURCE_DIR}/cmake/DefaultCompilerOptionsAndWarnings.cmake)
+include(${CMAKE_SOURCE_DIR}/cmake/print_compiler_info.cmake)
+
+macro(print_compiler_info)
+    message(STATUS "Compiler: ${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION}")
+endmacro()
+
+# Define the add_compiler_info function
+function(add_compiler_info target)
+    add_custom_command(
+            TARGET ${target} PRE_BUILD
+            COMMAND ${CMAKE_COMMAND} -E echo "C++ Compiler ID: ${CMAKE_CXX_COMPILER_ID}"
+            COMMAND ${CMAKE_COMMAND} -E echo "C++ Compiler Version: ${CMAKE_CXX_COMPILER_VERSION}"
+    )
+endfunction()
+
+function(add_data_file_copy target)
+    add_custom_command(
+            TARGET ${target} POST_BUILD
+            COMMENT "Copying data files to binary directory"
+            COMMAND ${CMAKE_COMMAND} -E make_directory ${DATA_DEST_DIR}
+            COMMAND ${CMAKE_COMMAND} -E copy_directory ${DATA_SOURCE_DIR} ${DATA_DEST_DIR}
+            DEPENDS ${DATA_SOURCE_DIR}
+    )
+endfunction()
 
 # static linking for easy installation
 option(BUILD_SHARED_LIBS "Build shared libraries" OFF)
@@ -102,6 +126,12 @@ set(DATA_SOURCE_DIR ${CMAKE_SOURCE_DIR}/assets)
 # Define the directory where you want to copy the data files
 set(DATA_DEST_DIR ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/assets)
 
+
+add_custom_target(show_compiler_info ALL
+        COMMAND ${CMAKE_COMMAND} -E echo "C++ Compiler ID: ${CMAKE_CXX_COMPILER_ID}"
+        COMMAND ${CMAKE_COMMAND} -E echo "C++ Compiler Version: ${CMAKE_CXX_COMPILER_VERSION}"
+)
+
 # Copy data files after building the target
 add_custom_target(copy_data_files ALL
         COMMENT "Copying data files to binary directory"
@@ -111,6 +141,8 @@ add_custom_target(copy_data_files ALL
 )
 
 # Set a dependency on copy_data_files for each of your target executables
-foreach(TARGET_EXECUTABLE ${TARGET_EXECUTABLES})
-        add_dependencies(${TARGET_EXECUTABLE} copy_data_files)
-endforeach()
+foreach (TARGET_EXECUTABLE ${TARGET_EXECUTABLES})
+    message(STATUS "harry")
+    add_dependencies(${TARGET_EXECUTABLE} copy_data_files)
+endforeach ()
+
