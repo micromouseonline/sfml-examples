@@ -2,6 +2,7 @@
 
 #include <SFML/Graphics.hpp>
 #include <vector>
+#include <array>
 #include "mazedata.h"
 #include "util.h"
 #include "walls.h"
