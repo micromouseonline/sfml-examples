@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.14)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 project("ImGui-SFML-Starter" LANGUAGES CXX)
@@ -33,10 +33,10 @@ FetchContent_Declare(ImGui-SFML
 FetchContent_MakeAvailable(ImGui-SFML)
 
 include_directories(${imgui_SOURCE_DIR})
-include_directories(libs/implot)
 
 add_subdirectory(libs/implot)
 set(IMPLOT_LIBS PUBLIC implot)
+include_directories(libs/implot)
 
 set(SFML_LIBS PUBLIC sfml-graphics sfml-system sfml-window)
 set(IMGUI_LIBS PUBLIC ImGui-SFML::ImGui-SFML)
@@ -54,6 +54,7 @@ add_subdirectory(src/007-vertex-arrays)
 add_subdirectory(src/008-tilemap)
 add_subdirectory(src/201-imgui-basic)
 add_subdirectory(src/301-implot-demo)
+add_subdirectory(src/302-implot-with-imgui)
 add_subdirectory(src/708-tilemap)
 add_subdirectory(src/808-wallmap)
 add_subdirectory(src/009-view-map)
@@ -71,6 +72,9 @@ add_subdirectory(src/012-raycast-collision-detection)
 
 # Define the directory containing your asset files
 set(DATA_SOURCE_DIR ${CMAKE_SOURCE_DIR}/assets)
+set(ASSETS_SOURCE_DIR "${CMAKE_SOURCE_DIR}/assets")
+set(ASSETS_DEST_DIR "${CMAKE_BINARY_DIR}/assets")
+
 
 # Define the directory where you want to copy the data files
 set(DATA_DEST_DIR ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/assets)
