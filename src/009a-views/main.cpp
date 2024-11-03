@@ -39,16 +39,17 @@
  * a RenderTexture and then display that - probably as a single sprite.
  */
 
-sf::FloatRect drawGrid(sf::RenderWindow& window, int units, float unitSize, const sf::Font& font) {
+sf::FloatRect drawGrid(sf::RenderTarget& target, int units, float unitSize, const sf::Font& font) {
+  float wall_size = unitSize / 16.0f;
   float size = units * unitSize;
   sf::RectangleShape bg(sf::Vector2f(size, size));
   bg.setFillColor(sf::Color(0, 0, 64));
-  window.draw(bg);
+  target.draw(bg);
 
   sf::RectangleShape cell(sf::Vector2f(unitSize, unitSize));
   cell.setFillColor(sf::Color::Transparent);
   cell.setOutlineColor(sf::Color::Cyan);
-  cell.setOutlineThickness(unitSize / 16.0f);
+  cell.setOutlineThickness(wall_size);
 
   sf::Text text;
   text.setFont(font);
@@ -60,14 +61,14 @@ sf::FloatRect drawGrid(sf::RenderWindow& window, int units, float unitSize, cons
       float x = i * unitSize;
       float y = units * unitSize - j * unitSize;
       cell.setOrigin(0, unitSize);
-      cell.setPosition(x, y);
-      window.draw(cell);
+      cell.setPosition(x + wall_size, y + wall_size);
+      target.draw(cell);
 
       text.setString("(" + std::to_string(i) + "," + std::to_string(j) + ")");
       float text_width = text.getGlobalBounds().width;
       float text_height = text.getGlobalBounds().height;
       text.setPosition(x + (unitSize - text_width) / 2, (y - (unitSize + text_height) / 2));
-      window.draw(text);
+      target.draw(text);
     }
   }
   return bg.getGlobalBounds();
@@ -85,7 +86,23 @@ int main() {
 
   float cell_size = 180.0f;
   int grid_width = 16;
+  float grid_size = grid_width * cell_size;
   float view_size = cell_size * 6;
+
+  /// create a render texture that the grid will be drawn onto
+  /// attempts to draw outside this texture will be cropped
+  sf::RenderTexture grid_texture;
+  if (!grid_texture.create(grid_size + 50, grid_size + 50)) {
+    std::cerr << "Unable to create maze render texture\n";
+    exit(1);
+  }
+  /// The grid view is static so we can just draw it once here
+  grid_texture.clear();
+  drawGrid(grid_texture, 16, 180.0f, font);
+  grid_texture.display();
+
+  /// And assign it to a sprite
+  sf::Sprite grid(grid_texture.getTexture());
 
   /// now make a view big enough for only part of the scene
   /// Only that part of the scene will be displayed and it
@@ -127,7 +144,9 @@ int main() {
 
     window.clear();
     window.setView(view);  // Update the view
-    drawGrid(window, 16, 180.0f, font);
+                           //    drawGrid(window, 16, 180.0f, font);
+    window.draw(grid);
+
     window.display();
   }
 
