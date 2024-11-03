@@ -26,7 +26,7 @@
  * will simply scale the rendered content. Since this is a bitmap stored in
  * the GPU memory, there are likely to be aliasing or pixelation artifacts.
  */
-
+//////////////////////////////////////////////////////////////////////////
 /**
  * Draw a grid onto the supplied render target (window) and label each cell
  * with its x,y coordinates.
@@ -73,9 +73,10 @@ sf::FloatRect drawGrid(sf::RenderWindow& window, int units, float unitSize, cons
   return bg.getGlobalBounds();
 }
 
+/////////////////////////////////////////////////////////////////////////////////////
 int main() {
   sf::ContextSettings settings;
-  settings.antialiasingLevel = 8;  // the number of multisamplings to use. 4 is probably fine
+  settings.antialiasingLevel = 8;  // the number of multi-samplings to use. 4 is probably fine
   sf::RenderWindow window(sf::VideoMode(800, 800), "View Example", sf::Style::Default, settings);
 
   sf::Font font;
@@ -85,12 +86,13 @@ int main() {
 
   float cell_size = 180.0f;
   int grid_width = 16;
-  float view_size = cell_size * 6;
 
-  /// now make a view big enough for only part of the scene
+  /// now make a view big enough for only part of the scene - 6 cells
   /// Only that part of the scene will be displayed and it
   /// will fill the window
+  float view_size = cell_size * 6;
   sf::View view(sf::FloatRect(0, 0, view_size, view_size));
+  // Positioning is always done by reference to the centre
   view.setCenter(sf::Vector2f(cell_size * grid_width / 2, cell_size * grid_width / 2));
   window.setView(view);
 
