@@ -8,7 +8,7 @@
 #include "implot.h"
 
 ///
-const int NUM_POINTS = 600;
+const int NUM_POINTS = 314;
 float x_data[NUM_POINTS] = {0};
 float y_data[NUM_POINTS];
 
@@ -19,20 +19,18 @@ void generate_data(float fx, float fy) {
   }
 }
 
-float fa = 40.0;
-float fb = 30.0;
+float fa = 3.0;
+float fb = 4.0;
 int main() {
   /// Any antialiasing has to be set globally when creating the window:
   sf::ContextSettings settings;
   settings.antialiasingLevel = 16;  // the number of multisamplings to use. 4 is probably fine
-  sf::RenderWindow window{sf::VideoMode(1100, 800), "002-shapes-and-textures", sf::Style::Default, settings};
+  sf::RenderWindow window{sf::VideoMode(800, 600), "302-implot-with-imgui", sf::Style::Default, settings};
 
   window.setVerticalSyncEnabled(true);
   if (!ImGui::SFML::Init(window)) {
     return -1;
   }
-  ImGui::GetStyle().AntiAliasedFill = true;
-  ImGui::GetStyle().AntiAliasedLines = true;
 
   generate_data(fa, fb);
   ImPlot::CreateContext();
@@ -59,21 +57,25 @@ int main() {
     sf::Time time = deltaClock.restart();
     ImGui::SFML::Update(window, time);
 
-    ImGui::SetNextWindowSize(ImVec2(400, 650));
-    ImGui::Begin("A Simple Plot", nullptr, ImGuiWindowFlags_NoResize);
-    if (ImPlot::BeginPlot("First Plot")) {
-      ImPlot::SetNextLineStyle(ImPlot::GetColormapColor(0));
-      ImPlot::PlotLine("Time Series", x_data, NUM_POINTS);
-      ImPlot::SetNextLineStyle(ImPlot::GetColormapColor(1));
-      ImPlot::PlotLine("Time Series", y_data, NUM_POINTS);
-      ImPlot::EndPlot();
-    }
-    if (ImPlot::BeginPlot("Another Plot")) {
+    ImGui::Begin("Hello, ImPLot");
+    static bool show_demo = false;
+    bool cb_changed = ImGui::Checkbox("Show ImPlot Demo", &show_demo);
+    ImGui::End();
+
+    ImGui::Begin("A Simple Plot");
+    if (ImPlot::BeginPlot("My Plot")) {
       ImPlot::PlotLine("Simple XY", x_data, y_data, NUM_POINTS);
       ImPlot::EndPlot();
     }
     ImGui::End();
-    ImPlot::ShowDemoWindow();
+    //
+    //    ImGui::ShowDemoWindow();
+    if (show_demo) {
+      ImPlot::ShowDemoWindow();
+    }
+    if (cb_changed) {
+      std::cout << "Yeh!" << std::endl;
+    }
 
     /// and redraw the window
     window.clear();
