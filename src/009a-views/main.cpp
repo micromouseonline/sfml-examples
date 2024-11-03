@@ -28,16 +28,9 @@
  */
 
 /**
- * Draw a grid onto the supplied render target and label each cell
- * with its x,y coordinates.
- * Return the grid's global bounds
- *
- * It is not important what we draw for this demo. It is just some content
- * that makes it easy to understand which part we are looking at
+ * Simple utility to resize a rectangle by shrinking the borders
  */
-
 void shrink(sf::RectangleShape& rect, float pixels) {
-  // Get the current size and position
   sf::Vector2f currentSize = rect.getSize();
   sf::Vector2f currentPos = rect.getPosition();
   sf::Vector2f newSize = currentSize - sf::Vector2f(pixels, pixels);
@@ -46,6 +39,14 @@ void shrink(sf::RectangleShape& rect, float pixels) {
   rect.setPosition(currentPos + offset);
 }
 
+/**
+ * Draw a grid onto the supplied render target and label each cell
+ * with its x,y coordinates.
+ * Return the grid's global bounds
+ *
+ * It is not important what we draw for this demo. It is just some content
+ * that makes it easy to understand which part we are looking at
+ */
 sf::FloatRect drawGrid(sf::RenderTarget& target, int cell_count, float cell_size, float wall_size, const sf::Font& font) {
   /// make and fill a background rectangle
   float size = cell_count * cell_size + wall_size;
@@ -62,7 +63,7 @@ sf::FloatRect drawGrid(sf::RenderTarget& target, int cell_count, float cell_size
   cell.setOutlineColor(sf::Color::Cyan);
   /// Each cell 'owns' half a wall
   cell.setOutlineThickness(wall_size / 2);
-
+  // prepare to write the x,y coordinate in each cell
   sf::Text text;
   text.setFont(font);
   text.setCharacterSize(static_cast<int>(cell_size / 4));
@@ -72,10 +73,11 @@ sf::FloatRect drawGrid(sf::RenderTarget& target, int cell_count, float cell_size
     for (int j = 0; j < cell_count; ++j) {
       float x = i * cell_size;
       float y = cell_count * cell_size - j * cell_size;
+      // draw the cell
       cell.setOrigin(0, cell_size);
       cell.setPosition(x + wall_size, y + wall_size);
       target.draw(cell);
-
+      // and its (x,y) coordinate
       text.setString("(" + std::to_string(i) + "," + std::to_string(j) + ")");
       float text_width = text.getGlobalBounds().width;
       float text_height = text.getGlobalBounds().height;
@@ -123,9 +125,6 @@ int main() {
   sf::View view(sf::FloatRect(0, 0, view_size, view_size));
   view.setCenter(sf::Vector2f(grid_texture.getSize().x / 2, grid_texture.getSize().y / 2));
   window.setView(view);
-  sf::Clock deltaClock{};  /// Keeps track of elapsed time
-  int elapsed = 0;
-  int count = 0;
   while (window.isOpen()) {
     sf::Event event;
     while (window.pollEvent(event)) {
@@ -158,15 +157,10 @@ int main() {
       }
     }
     window.clear();
-    deltaClock.restart();
-    window.draw(grid);  // 10us
-                        //    drawGrid(window, grid_width, cell_size, wall_size, font); // 5ms
-    elapsed = deltaClock.restart().asMicroseconds();
+    // It is 200-500 times faster to draw the pre-rendered texture map
+    // compared to drawing directly to the window
+    window.draw(grid);
     window.display();
-    if (++count > 60) {
-      count = 0;
-      std::cout << elapsed << std::endl;
-    }
   }
 
   return 0;
