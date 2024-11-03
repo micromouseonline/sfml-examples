@@ -1,4 +1,3 @@
-#include <math.h>
 #include <SFML/Graphics.hpp>
 #include <SFML/System/Clock.hpp>
 #include <SFML/Window/Event.hpp>
@@ -6,6 +5,8 @@
 #include <iostream>
 #include "map.h"
 #include "maze_constants.h"
+#include "robot.h"
+#include "robotview.h"
 #include "util.h"
 #include "walls.h"
 
@@ -70,19 +71,10 @@ int main() {
     exit(1);
   }
 
-  sf::Texture robot_sprite;
-  if (!robot_sprite.loadFromFile("./assets/images/mouse-77x100.png")) {
-    std::cerr << "Unable to load texture\n";
-    exit(1);
-  }
-
-  sf::Sprite robot;
-  robot.setTexture(robot_sprite);
-  robot.setTextureRect(sf::IntRect(0, 0, 77, 100));
-  robot.setOrigin(38.5, 60);
-  robot.setPosition(270, 270);
-  robot.setRotation(180.0);
-  // robot.scale(0.5, 0.5);
+  Robot robot(robot_width, robot_height);
+  robot.setPosition(270, 90 + 12 * 180);
+  RobotView robot_view(robot);
+  robot_view.load_texture("./assets/images/mouse-77x100.png");
 
   // create the tilemap from the level_map definition
   TileMap map;
@@ -121,6 +113,8 @@ int main() {
   txt_robot_pose.setPosition(mini_map_view_port_rect.left, mini_map_view_port_rect.top - 30);
 
   // Create a larger render texture
+  // these are stored in the GPU and are fast
+  // units are mm so 1 pixel/mm but it can be scaled at very little cost in the GPU
   sf::RenderTexture renderTexture;
   if (!renderTexture.create(16 * 180, 16 * 180)) {
     // Error handling
@@ -152,47 +146,37 @@ int main() {
       }
     }
 
-    float v = 0;
-    robot.setTextureRect(sf::IntRect(0 * robot_width, 0, robot_width, robot_height));
+    robot.set_state(0);
+    robot.setSpeed(0);
     if (window.hasFocus()) {
       if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right)) {
-        robot.setTextureRect(sf::IntRect(1 * robot_width, 0, robot_width, robot_height));
+        robot.set_state(1);
         robot.rotate(3);
       }
       if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left)) {
-        robot.setTextureRect(sf::IntRect(2 * robot_width, 0, robot_width, robot_height));
+        robot.set_state(2);
         robot.rotate(-3);
       }
       if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up)) {
-        robot.setTextureRect(sf::IntRect(3 * robot_width, 0, robot_width, robot_height));
-        v = 360;
+        robot.set_state(3);
+        robot.setSpeed(360);
       }
       if (sf::Keyboard::isKeyPressed(sf::Keyboard::Down)) {
-        v = -360;
+        robot.set_state(3 + 4);  // because I can
+        robot.setSpeed(-360);
       }
     }
-    char buf[100];
 
     sf::Time time = deltaClock.restart();
-    float angle = robot.getRotation();
-    float ds = v * time.asSeconds();
-    float dx = std::cos((angle - 90) * 3.14 / 180) * ds;
-    float dy = std::sin((angle - 90) * 3.14 / 180) * ds;
-    if (robot.getPosition().x + dx < 1024 && robot.getPosition().x + dx > 0) {
-      // robot.move(sf::Vector2f(dx, dy) * time.asSeconds());
-    }
-    robot.move(sf::Vector2f(dx, dy));
 
-    sf::Vector2i mousePos = sf::Mouse::getPosition(window);
-    // mx = std::max(mx, 32.0f);
-    // my = std::max(my, 32.0f);
+    // update the objects on screen
+    robot.update(time.asSeconds());
+    robot_view.update();
+    mini_map_view.setCenter(robot_view.getPosition().x, robot_view.getPosition().y);
+    mini_map_view.setCenter(robot_view.getPosition().x, robot_view.getPosition().y);
 
-    // mx = std::min(mx, 31 * 32.0f);
-    // my = std::min(my, 31 * 32.0f);
-
+    char buf[100];
     txt_robot_pose.setString(buf);
-
-    mini_map_view.setCenter(robot.getPosition().x, robot.getPosition().y);
 
     /// and redraw the window
     window.clear();
@@ -204,23 +188,30 @@ int main() {
     frame.setPosition(main_map_view_port_rect.left - 3.0f, main_map_view_port_rect.top - 3.0f);
     window.draw(frame);
 
-    // render main map
-    // drawing is done into a view
+    // render main map into a view
     window.setView(main_map_view);
+
     // Convert the mouse position to the map view
-    float scale = map_view_size / renderTexture.getSize().x;
+    sf::Vector2i mousePos = sf::Mouse::getPosition(window);
     sf::Vector2f worldPos = window.mapPixelToCoords(mousePos);
+
+    /***
+     * the map view
+     */
+    float scale = map_view_size / renderTexture.getSize().x;
     int cellSize = scale * 180;
     int cellx = worldPos.x / cellSize;
     int celly = 16 - worldPos.y / cellSize;
     map.clear_colours();
     map.set_cell_colour(cellx, celly, sf::Color::Green);
+
     map.setScale(1, 1);
-    robot.setScale(1, 1);
+    robot_view.setScale(1, 1);
     renderTexture.clear();
     renderTexture.draw(map);
-    renderTexture.draw(robot);
+    renderTexture.draw(robot_view);
     renderTexture.display();
+    // now the render texture is drawn as a single sprite
     sf::Sprite map_sprite(renderTexture.getTexture());
     map_sprite.setScale(scale, scale);
     window.draw(map_sprite);
@@ -228,11 +219,12 @@ int main() {
     // render minimap
     // mini_map_view.setRotation(robot.getRotation());
     /// Stuff must be drawn on both views. Still do not know why
+    /// These may be two separate textures that both need filling
     window.setView(mini_map_view);
-    map_sprite.setScale(1., 1.);
-    mini_map_view.setCenter(robot.getPosition().x, robot.getPosition().y);
+    map_sprite.setScale(1.0, 1.0);
     window.draw(map_sprite);
 
+    mini_map_view.setCenter(robot_view.getPosition().x, robot_view.getPosition().y);
     // render UI stuff
     window.setView(main_view);
     time = deltaClock.restart();
@@ -240,7 +232,7 @@ int main() {
     txt += "Mouse: " + std::to_string(mousePos.x) + "," + std::to_string(mousePos.y) + "\n";
     txt += "Map: " + std::to_string((int)worldPos.x) + "," + std::to_string((int)worldPos.y) + "\n";
     txt += "Cell: " + std::to_string((int)cellx) + "," + std::to_string((int)celly) + "\n";
-    sprintf(buf, "Pose: %d,%d,%d", int(robot.getPosition().x), int(robot.getPosition().y), int(robot.getRotation()));
+    sprintf(buf, "Pose: %d,%d,%d", int(robot_view.getPosition().x), int(robot_view.getPosition().y), int(robot_view.getRotation()));
     txt_robot_pose.setString(buf);
     txt_robot_pose.setString(txt);
     txt_robot_pose.setPosition(mini_map_view_port_rect.left, mini_map_view_port_rect.top - txt_robot_pose.getLocalBounds().height);

@@ -1,7 +1,10 @@
 set(APP 808-wallmap)
 add_executable(${APP} ""
         walls.h
-        mazedata.h)
+        mazedata.h
+        RobotView.h
+        Robot.cpp
+        Robot.h)
 target_sources(${APP} PRIVATE
         main.cpp
 )
