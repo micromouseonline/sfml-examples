@@ -134,6 +134,7 @@ set(DATA_DEST_DIR ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/assets)
 
 
 add_custom_target(show_compiler_info ALL
+        COMMAND ${CMAKE_COMMAND} -E echo "C++ Compiler path: ${CMAKE_CXX_COMPILER}"
         COMMAND ${CMAKE_COMMAND} -E echo "C++ Compiler ID: ${CMAKE_CXX_COMPILER_ID}"
         COMMAND ${CMAKE_COMMAND} -E echo "C++ Compiler Version: ${CMAKE_CXX_COMPILER_VERSION}"
 )
