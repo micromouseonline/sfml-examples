@@ -28,46 +28,58 @@
  */
 
 /**
- * Draw a grid onto the supplied render target (window) and label each cell
+ * Draw a grid onto the supplied render target and label each cell
  * with its x,y coordinates.
  * Return the grid's global bounds
  *
- * This is an expensive way to do this in computational terms and will take
- * up quite a lot of GPU and CPU cycles.
- *
- * Since the scene is static, it would be better to draw it once onto
- * a RenderTexture and then display that - probably as a single sprite.
+ * It is not important what we draw for this demo. It is just some content
+ * that makes it easy to understand which part we are looking at
  */
 
-sf::FloatRect drawGrid(sf::RenderTarget& target, int units, float unitSize, const sf::Font& font) {
-  float wall_size = unitSize / 16.0f;
-  float size = units * unitSize;
+void shrink(sf::RectangleShape& rect, float pixels) {
+  // Get the current size and position
+  sf::Vector2f currentSize = rect.getSize();
+  sf::Vector2f currentPos = rect.getPosition();
+  sf::Vector2f newSize = currentSize - sf::Vector2f(pixels, pixels);
+  rect.setSize(newSize);
+  sf::Vector2f offset(pixels / 2, pixels / 2);
+  rect.setPosition(currentPos + offset);
+}
+
+sf::FloatRect drawGrid(sf::RenderTarget& target, int cell_count, float cell_size, float wall_size, const sf::Font& font) {
+  /// make and fill a background rectangle
+  float size = cell_count * cell_size + wall_size;
   sf::RectangleShape bg(sf::Vector2f(size, size));
+  bg.setFillColor(sf::Color::Cyan);
+  target.draw(bg);
+  shrink(bg, wall_size);
   bg.setFillColor(sf::Color(0, 0, 64));
   target.draw(bg);
 
-  sf::RectangleShape cell(sf::Vector2f(unitSize, unitSize));
+  /// create a rectangle for the cell inside
+  sf::RectangleShape cell(sf::Vector2f(cell_size - wall_size, cell_size - wall_size));
   cell.setFillColor(sf::Color::Transparent);
   cell.setOutlineColor(sf::Color::Cyan);
-  cell.setOutlineThickness(wall_size);
+  /// Each cell 'owns' half a wall
+  cell.setOutlineThickness(wall_size / 2);
 
   sf::Text text;
   text.setFont(font);
-  text.setCharacterSize(static_cast<int>(unitSize / 4));
+  text.setCharacterSize(static_cast<int>(cell_size / 4));
   text.setFillColor(sf::Color::White);
 
-  for (int i = 0; i < units; ++i) {
-    for (int j = 0; j < units; ++j) {
-      float x = i * unitSize;
-      float y = units * unitSize - j * unitSize;
-      cell.setOrigin(0, unitSize);
+  for (int i = 0; i < cell_count; ++i) {
+    for (int j = 0; j < cell_count; ++j) {
+      float x = i * cell_size;
+      float y = cell_count * cell_size - j * cell_size;
+      cell.setOrigin(0, cell_size);
       cell.setPosition(x + wall_size, y + wall_size);
       target.draw(cell);
 
       text.setString("(" + std::to_string(i) + "," + std::to_string(j) + ")");
       float text_width = text.getGlobalBounds().width;
       float text_height = text.getGlobalBounds().height;
-      text.setPosition(x + (unitSize - text_width) / 2, (y - (unitSize + text_height) / 2));
+      text.setPosition(x + (cell_size - text_width) / 2, (y - (cell_size + text_height) / 2));
       target.draw(text);
     }
   }
@@ -76,29 +88,29 @@ sf::FloatRect drawGrid(sf::RenderTarget& target, int units, float unitSize, cons
 
 int main() {
   sf::ContextSettings settings;
-  settings.antialiasingLevel = 8;  // the number of multisamplings to use. 4 is probably fine
+  settings.antialiasingLevel = 8;  // the number of multi-samplings to use. 4 is probably fine
   sf::RenderWindow window(sf::VideoMode(800, 800), "View Example", sf::Style::Default, settings);
+  window.setFramerateLimit(60);
 
   sf::Font font;
   if (!font.loadFromFile("./assets/fonts/consolas.ttf")) {
     return -1;
   }
 
+  /// Work out how big the grid will be. Assume 1 pixel == 1 mm
+  float wall_size = 12.0f;
   float cell_size = 180.0f;
   int grid_width = 16;
-  float grid_size = grid_width * cell_size;
-  float view_size = cell_size * 6;
+  float grid_size = grid_width * cell_size + wall_size;
 
   /// create a render texture that the grid will be drawn onto
   /// attempts to draw outside this texture will be cropped
   sf::RenderTexture grid_texture;
-  if (!grid_texture.create(grid_size + 50, grid_size + 50)) {
-    std::cerr << "Unable to create maze render texture\n";
-    exit(1);
-  }
+  grid_texture.create(grid_size, grid_size);
+
   /// The grid view is static so we can just draw it once here
   grid_texture.clear();
-  drawGrid(grid_texture, 16, 180.0f, font);
+  drawGrid(grid_texture, grid_width, cell_size, wall_size, font);
   grid_texture.display();
 
   /// And assign it to a sprite
@@ -107,10 +119,13 @@ int main() {
   /// now make a view big enough for only part of the scene
   /// Only that part of the scene will be displayed and it
   /// will fill the window
+  float view_size = cell_size * 6;
   sf::View view(sf::FloatRect(0, 0, view_size, view_size));
-  view.setCenter(sf::Vector2f(cell_size * grid_width / 2, cell_size * grid_width / 2));
+  view.setCenter(sf::Vector2f(grid_texture.getSize().x / 2, grid_texture.getSize().y / 2));
   window.setView(view);
-
+  sf::Clock deltaClock{};  /// Keeps track of elapsed time
+  int elapsed = 0;
+  int count = 0;
   while (window.isOpen()) {
     sf::Event event;
     while (window.pollEvent(event)) {
@@ -128,9 +143,9 @@ int main() {
         window.setView(view);
       }
 
-      // Example: move the view with arrow keys
+      // move the view with arrow keys
       if (event.type == sf::Event::KeyPressed) {
-        float delta = cell_size / 10;
+        float delta = wall_size;
         if (event.key.code == sf::Keyboard::Left)
           view.move(-delta, 0);
         if (event.key.code == sf::Keyboard::Right)
@@ -139,15 +154,19 @@ int main() {
           view.move(0, -delta);
         if (event.key.code == sf::Keyboard::Down)
           view.move(0, delta);
+        window.setView(view);
       }
     }
-
     window.clear();
-    window.setView(view);  // Update the view
-                           //    drawGrid(window, 16, 180.0f, font);
-    window.draw(grid);
-
+    deltaClock.restart();
+    window.draw(grid);  // 10us
+                        //    drawGrid(window, grid_width, cell_size, wall_size, font); // 5ms
+    elapsed = deltaClock.restart().asMicroseconds();
     window.display();
+    if (++count > 60) {
+      count = 0;
+      std::cout << elapsed << std::endl;
+    }
   }
 
   return 0;
