@@ -21,7 +21,7 @@
 
 class Sensor {
  public:
-  Sensor(sf::Vector2f origin, float angle, float half_angle = 5.0f, int steps = 20)
+  Sensor(sf::Vector2f origin, float angle, float half_angle = 5.0f, int steps = 11)
       : m_origin(origin), m_angle(angle), m_half_angle(half_angle), m_rays(steps) {}
 
   void set_origin(sf::Vector2f origin) { m_origin = origin; }
