@@ -74,7 +74,7 @@ int main() {
   /// Any antialiasing has to be set globally when creating the window:
   sf::ContextSettings settings;
   settings.antialiasingLevel = 8;  // the number of multisamplings to use. 4 is probably fine
-  sf::RenderWindow window{sf::VideoMode(600, 400), "008 Tilemap", sf::Style::Default, settings};
+  sf::RenderWindow window{sf::VideoMode(600, 400), WINDOW_TITLE, sf::Style::Default, settings};
   window.setFramerateLimit(60);
 
   sf::Clock up_time{};

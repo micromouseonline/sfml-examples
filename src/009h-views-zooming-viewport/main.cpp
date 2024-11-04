@@ -37,7 +37,7 @@ sf::FloatRect calculate_viewport(const sf::FloatRect& viewport, const sf::FloatR
 
 int main() {
   // Create the SFML window
-  sf::RenderWindow window(sf::VideoMode(window_width, window_height), "SFML Map and Mini Map View");
+  sf::RenderWindow window(sf::VideoMode(window_width, window_height), WINDOW_TITLE);
 
   // Load the map image and put it on a RectangleShape
   // we could use a sprite instead

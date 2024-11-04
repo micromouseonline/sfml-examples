@@ -171,7 +171,7 @@ int main() {
   /// Any antialiasing has to be set globally when creating the window:
   sf::ContextSettings settings;
   settings.antialiasingLevel = 8;  // the number of multisamplings to use. 4 is probably fine
-  sf::RenderWindow window(sf::VideoMode(1200, 900), "011 Raycast Sensors", sf::Style::Default, settings);
+  sf::RenderWindow window(sf::VideoMode(1200, 900), WINDOW_TITLE, sf::Style::Default, settings);
 
   sf::Font font;
   if (!font.loadFromFile("./assets/fonts/consolas.ttf")) {

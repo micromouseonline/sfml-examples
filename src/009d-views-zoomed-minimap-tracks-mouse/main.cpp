@@ -55,7 +55,7 @@ int main() {
   sf::Color ui_colour(0, 63, 0, 128);
 
   // Create the SFML window
-  sf::RenderWindow window(sf::VideoMode(window_width, window_height), "SFML Map and Mini Map View");
+  sf::RenderWindow window(sf::VideoMode(window_width, window_height), WINDOW_TITLE);
 
   sf::Font font;
   if (!font.loadFromFile("./assets/fonts/national-park.otf")) {

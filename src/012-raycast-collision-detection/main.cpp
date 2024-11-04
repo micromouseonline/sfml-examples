@@ -1,8 +1,14 @@
+#include <math.h>
 #include <SFML/Graphics.hpp>
 #include <cmath>
 #include <iostream>
 #include <string>
-#include "ExpFilter.h"
+#include "expfilter.h"
+
+#ifndef M_PI
+#define M_PI (3.14159265358979323846)
+#endif
+
 // Returns distance between points
 inline float distance(const sf::Vector2f& a, const sf::Vector2f& b) {
   float dx = a.x - b.x;
@@ -175,7 +181,7 @@ int main() {
   /// Any antialiasing has to be set globally when creating the window:
   sf::ContextSettings settings;
   settings.antialiasingLevel = 8;  // the number of multisamplings to use. 4 is probably fine
-  sf::RenderWindow window(sf::VideoMode(1200, 900), "011 Raycast Sensors", sf::Style::Default, settings);
+  sf::RenderWindow window(sf::VideoMode(1200, 900), WINDOW_TITLE, sf::Style::Default, settings);
 
   sf::Font font;
   if (!font.loadFromFile("./assets/fonts/consolas.ttf")) {
@@ -200,7 +206,9 @@ int main() {
 
   sf::Sprite mouse;
   mouse.setTexture(mouse_texture);
-  mouse.setTextureRect(sf::IntRect{0, 0, 77, 100});
+  sf::IntRect normal(0, 0, 77, 100);
+  sf::IntRect blocked(4 * 77, 0, 77, 100);
+  mouse.setTextureRect(normal);
   mouse.setOrigin(39, 60);
   mouse.setPosition(286, 466);
 
@@ -293,10 +301,12 @@ int main() {
     }
     if (mouse.getPosition().x + dx < 1024 && mouse.getPosition().x + dx > 0) {
       if (can_move) {
+        mouse.setTextureRect(normal);
         mouse.rotate(d_theta);
         mouse.move(movement);
         shield_colour = sf::Color::Transparent;
       } else {
+        mouse.setTextureRect(blocked);
         shield_colour = sf::Color::Red;
         /// we can get stuck here.
         /// TODO:: get unstuck!
@@ -309,32 +319,17 @@ int main() {
     int phase2 = clock.restart().asMicroseconds();
 
     /// takes about 1.2us per point
-    /// this can be done once and then all the points get rotated in the loop
-    //    create_collision_shield(the_mouse, 39, 60, 180);
     collision_shield = base_shield_points;
     rotatePoints(collision_shield, angle);
 
     int phase3 = clock.restart().asMicroseconds();
-    sf::CircleShape circle;
-    circle.setRadius(2);
-    circle.setOrigin(2, 2);
-    circle.setFillColor(shield_colour);
-    if (!can_move) {
-      for (auto& point : collision_shield) {
-        sf::Vector2f p = mouse.getPosition() + point;
-        circle.setPosition(p);
-        window.draw(circle);  // about 1.2us per circle - not needed once debugged
-      }
-    }
-    int phase4 = clock.restart().asMicroseconds();
 
     std::string string = "";
     string = "times:\n";
     string += "test and move: " + std::to_string(phase1) + " us\n";
     string += "get mouse pos: " + std::to_string(phase2) + " us\n";
     string += "rotate shield: " + std::to_string(phase3) + " us\n";
-    string += "  draw shield: " + std::to_string(phase4) + " us\n";
-    int total = phase1 + phase2 + phase3 + phase4;
+    int total = phase1 + phase2 + phase3;
     frame_time.update(total);
     string += "   total time: " + std::to_string(int(frame_time.value)) + " us\n";
     string += "Mouse: " + std::to_string((int)mousePosition.x) + ", " + std::to_string((int)mousePosition.y) + "\n";

@@ -1,4 +1,7 @@
-set(APP 002c-sprite-animated)
+get_filename_component(CURRENT_DIR_NAME ${CMAKE_CURRENT_SOURCE_DIR} NAME)
+set(APP ${CURRENT_DIR_NAME})
+add_definitions(-DWINDOW_TITLE=\"${APP}\")
+
 add_executable(${APP} "")
 target_sources(${APP} PRIVATE
         main.cpp

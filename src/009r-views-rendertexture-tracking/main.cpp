@@ -41,10 +41,18 @@ int main() {
   sf::ContextSettings settings;
   settings.antialiasingLevel = 8;  // the number of multisamplings to use. 4 is probably fine
   /// do not let window resize
-  sf::RenderWindow window{sf::VideoMode(window_width, window_height), "009 Views", sf::Style::Titlebar + sf::Style::Close, settings};
+  sf::RenderWindow window{sf::VideoMode(window_width, window_height), WINDOW_TITLE, sf::Style::Titlebar + sf::Style::Close, settings};
   window.setFramerateLimit(60);
-
-  sf::Clock up_time{};
+  std::vector<sf::RectangleShape> walls;
+  walls.resize(10000);
+  for (int i = 0; i < walls.size(); i++) {
+    walls[i].setSize(sf::Vector2f(32, 32));
+    walls[i].setPosition(rand() % 1000, rand() % 1000);
+    walls[i].setFillColor(sf::Color(rand() % 255, rand() % 255, rand() % 255));
+    walls[i].setOrigin(16, 16);
+    walls[i].rotate(rand() % 360);
+  }
+  sf::Clock clock{};
 
   sf::Font font;
   if (!font.loadFromFile("./assets/fonts/consolas.ttf")) {
@@ -55,6 +63,12 @@ int main() {
   sf::Texture robot_sprite;
   if (!robot_sprite.loadFromFile("./assets/images/mouse-8x1.png")) {
     std::cerr << "Unable to load texture\n";
+    exit(1);
+  }
+
+  sf::RenderTexture maze_render_texture;
+  if (!maze_render_texture.create(3000, 1500)) {
+    std::cerr << "Unable to create maze render texture\n";
     exit(1);
   }
 
@@ -100,6 +114,7 @@ int main() {
   txt_robot_pose.setFillColor(sf::Color::White);
   txt_robot_pose.setPosition(mini_map_view_port_rect.left, mini_map_view_port_rect.top - 30);
   sf::Clock deltaClock;
+  int frame_count = 0;
   while (window.isOpen()) {
     /// process all the inputs
     sf::Event event{};
@@ -125,15 +140,20 @@ int main() {
     }
 
     float v = 0;
+    if (frame_count > 0) {
+      frame_count--;
+    }
     robot.setTextureRect(sf::IntRect(0, 0, 28, 32));
     if (window.hasFocus()) {
-      if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left)) {
+      if (frame_count == 0 && sf::Keyboard::isKeyPressed(sf::Keyboard::Left)) {
         robot.setTextureRect(sf::IntRect(32, 0, 28, 32));
-        robot.rotate(-3);
+        robot.rotate(-45);
+        frame_count = 60;
       }
-      if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right)) {
+      if (frame_count == 0 && sf::Keyboard::isKeyPressed(sf::Keyboard::Right)) {
         robot.setTextureRect(sf::IntRect(64, 0, 28, 32));
-        robot.rotate(3);
+        robot.rotate(45);
+        frame_count = 60;
       }
       if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up)) {
         robot.setTextureRect(sf::IntRect(96, 0, 28, 32));
@@ -161,27 +181,44 @@ int main() {
 
     // mx = std::min(mx, 31 * 32.0f);
     // my = std::min(my, 31 * 32.0f);
-    sprintf(buf, "Pose: %d,%d,%d", int(robot.getPosition().x), int(robot.getPosition().y), int(robot.getRotation()));
-    txt_robot_pose.setString(buf);
 
     mini_map_view.setCenter(robot.getPosition().x, robot.getPosition().y);
 
     /// and redraw the window
     window.clear();
-
+    clock.restart();
     window.setView(main_view);
-    window.draw(txt_robot_pose);
+    maze_render_texture.clear(sf::Color::Blue);
+    maze_render_texture.draw(map);
+    maze_render_texture.draw(robot);
+    maze_render_texture.display();
+    for (auto wall : walls) {
+      // wall.rotate(robot.getRotation());
+      // window.draw(wall);
+    }
+    const sf::Texture& texture = maze_render_texture.getTexture();
+    // texture
+
+    // draw it to the window
+    sf::Sprite maze_map(texture);
 
     // drawing is done into a view
     window.setView(main_map_view);
     window.draw(map);
     window.draw(robot);
+    window.draw(maze_map);
 
     // mini_map_view.setRotation(robot.getRotation());
     /// Stuff must be drawn on both views. Still do not know why
+    /// TODO: is it because a vew is a copy of something?
     window.setView(mini_map_view);
     window.draw(map);
     window.draw(robot);
+    window.setView(main_view);
+    time = clock.restart();
+    sprintf(buf, "Pose: %d,%d,%03d (%02ld ms)", int(robot.getPosition().x), int(robot.getPosition().y), int(robot.getRotation()), time.asMilliseconds());
+    txt_robot_pose.setString(buf);
+    window.draw(txt_robot_pose);
 
     window.display();
   }

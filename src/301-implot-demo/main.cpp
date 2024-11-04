@@ -25,7 +25,7 @@ int main() {
   /// Any antialiasing has to be set globally when creating the window:
   sf::ContextSettings settings;
   settings.antialiasingLevel = 16;  // the number of multisamplings to use. 4 is probably fine
-  sf::RenderWindow window{sf::VideoMode(1100, 800), "002-shapes-and-textures", sf::Style::Default, settings};
+  sf::RenderWindow window{sf::VideoMode(1100, 800), WINDOW_TITLE, sf::Style::Default, settings};
 
   window.setVerticalSyncEnabled(true);
   if (!ImGui::SFML::Init(window)) {

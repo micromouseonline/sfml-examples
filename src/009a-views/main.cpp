@@ -91,7 +91,7 @@ sf::FloatRect drawGrid(sf::RenderTarget& target, int cell_count, float cell_size
 int main() {
   sf::ContextSettings settings;
   settings.antialiasingLevel = 8;  // the number of multi-samplings to use. 4 is probably fine
-  sf::RenderWindow window(sf::VideoMode(800, 800), "View Example", sf::Style::Default, settings);
+  sf::RenderWindow window(sf::VideoMode(800, 800), WINDOW_TITLE, sf::Style::Default, settings);
   window.setFramerateLimit(60);
 
   sf::Font font;

@@ -97,7 +97,7 @@ int main() {
   sf::ContextSettings settings;
   settings.antialiasingLevel = 8;
   uint32_t window_style = sf::Style::Titlebar | sf::Style::Close;  // no resizing
-  sf::RenderWindow window(sf::VideoMode(800, 800), "Two Views Example", window_style, settings);
+  sf::RenderWindow window(sf::VideoMode(800, 800), WINDOW_TITLE, window_style, settings);
   window.setFramerateLimit(60);
 
   sf::Font font;

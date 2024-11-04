@@ -23,7 +23,7 @@ int main() {
   //        Default = Titlebar | Resize | Close //!< Default window style
   /// Video Modes. If using fullscreen and the requested video mode is one that you monitor can be set to
   /// then it will be and, after the program exits, it will stay that way!
-  sf::RenderWindow window{sf::VideoMode(1920, 1080), "001 Basic Window and Shapes", sf::Style::Default, settings};
+  sf::RenderWindow window{sf::VideoMode(1920, 1080), WINDOW_TITLE, sf::Style::Default, settings};
   window.setFramerateLimit(60);
   /// You can set the window to a position in the monitor reference frame but this is likely not what you think
   /// The monitor reference frame is a rectangle enclosing all the monitor screens.

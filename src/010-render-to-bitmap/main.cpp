@@ -26,7 +26,7 @@ int main() {
   sf::ContextSettings settings;
   settings.antialiasingLevel = 8;                      // the number of multisamplings to use. 4 is probably fine
   int style = sf::Style::Titlebar | sf::Style::Close;  //!< Default window style
-  sf::RenderWindow window(sf::VideoMode(1200, 800), "SFML RenderTexture Example", style, settings);
+  sf::RenderWindow window(sf::VideoMode(1200, 800), WINDOW_TITLE, style, settings);
 
   /// load your resources early in case they fail
   sf::Font font;
