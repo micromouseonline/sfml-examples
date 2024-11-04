@@ -67,7 +67,7 @@ int main() {
   /// Any antialiasing has to be set globally when creating the window:
   sf::ContextSettings settings;
   settings.antialiasingLevel = 8;  // the number of multisamplings to use. 4 is probably fine
-  sf::RenderWindow window(sf::VideoMode(1200, 900), WINDOW_TITLE, sf::Style::Default, settings);
+  sf::RenderWindow window(sf::VideoMode(1200, 900), WINDOW_TITLE, sf::Style::Titlebar + sf::Style::Close, settings);
 
   sf::Font font;
   if (!font.loadFromFile("./assets/fonts/consolas.ttf")) {
@@ -91,8 +91,9 @@ int main() {
   sf::Sprite robot;
   robot.setTexture(mouse_texture);
   robot.setTextureRect(sf::IntRect{0, 0, 77, 100});
-  robot.setOrigin(38, 60);
-  robot.setPosition(285, 466);
+  robot.setOrigin(39, 60);
+  robot.setPosition(106 + 2 * 180, 105 + 2 * 180);
+  robot.setRotation(270);
 
   /// Text uses the sf::Text class
   sf::Text text;
@@ -173,10 +174,10 @@ int main() {
     robot.rotate(theta);
     float angle = robot.getRotation();
     float ds = v * time.asSeconds();
-    float dx = std::cos((angle - 90) * 3.14 / 180) * v;
-    float dy = std::sin((angle - 90) * 3.14 / 180) * v;
+    float dx = std::cos((angle - 90) * 3.14 / 180) * ds;
+    float dy = std::sin((angle - 90) * 3.14 / 180) * ds;
     if (robot.getPosition().x + dx < 1024 && robot.getPosition().x + dx > 0) {
-      robot.move(sf::Vector2f(dx, dy) * time.asSeconds());
+      robot.move(sf::Vector2f(dx, dy));
     }
     // Clear the window
     window.clear(sf::Color::Black);
