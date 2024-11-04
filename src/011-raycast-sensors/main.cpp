@@ -126,34 +126,82 @@ int main() {
   Sensor sensor_rds(robot.getPosition() + sf::Vector2f(-30, -40), 0);
   Sensor sensor_rfs(robot.getPosition() + sf::Vector2f(-30, -40), 0);
 
+  /// allow keyboard to make direct movements
+  enum Movement { NONE, SHIFT_LEFT, SHIFT_RIGHT, SHIFT_UP, SHIFT_DOWN, ROTATE_LEFT, ROTATE_RIGHT };
+  float shift_step = 1.0f;
+  float rotate_step = 45.0f;
+  Movement movement = NONE;
+
   // Main loop
   sf::Clock deltaClock;
   while (window.isOpen()) {
     // Event handling
+    float v = 0;
+    float w = 0;
     sf::Event event;
     while (window.pollEvent(event)) {
       bool should_close = false;
-      if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Escape) {
-        should_close = true;
-      }
       if (event.type == sf::Event::Closed) {
         should_close = true;
       };
+      /// these events are those which are passed to this window
+      if (event.type == sf::Event::KeyPressed) {
+        if (event.key.code == sf::Keyboard::Escape) {
+          should_close = true;
+        } else if (event.key.code == sf::Keyboard::A) {
+          movement = SHIFT_LEFT;
+        } else if (event.key.code == sf::Keyboard::D) {
+          movement = SHIFT_RIGHT;
+        } else if (event.key.code == sf::Keyboard::W) {
+          movement = SHIFT_UP;
+        } else if (event.key.code == sf::Keyboard::S) {
+          movement = SHIFT_DOWN;
+        } else if (event.key.code == sf::Keyboard::Q) {
+          movement = ROTATE_LEFT;
+        } else if (event.key.code == sf::Keyboard::E) {
+          movement = ROTATE_RIGHT;
+        }
+      } else if (event.type == sf::Event::KeyReleased) {
+        movement = NONE;
+      }
+
+      switch (movement) {
+        case SHIFT_LEFT:
+          robot.move(-shift_step, 0);
+          break;
+        case SHIFT_RIGHT:
+          robot.move(shift_step, 0);
+          break;
+        case SHIFT_UP:
+          robot.move(0, -shift_step);
+          break;
+        case SHIFT_DOWN:
+          robot.move(0, shift_step);
+          break;
+        case ROTATE_LEFT:
+          robot.rotate(-rotate_step);
+          break;
+        case ROTATE_RIGHT:
+          robot.rotate(rotate_step);
+          break;
+        default:
+          break;
+      }
+      movement = NONE;
       if (should_close) {
         window.close();
       }
     }
-    float v = 0;
-    float w = 0;
+    /// keyboard state is tested live regardless of which window has focus
+    /// this could be handled better
     if (window.hasFocus()) {
       if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left)) {
         w = -90.0f;
-        //        robot.rotate(-1);
       }
       if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right)) {
         w = 90.0f;
-        //        robot.rotate(1);
       }
+
       if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up)) {
         v = 100;
       }
@@ -182,11 +230,11 @@ int main() {
     // Clear the window
     window.clear(sf::Color::Black);
     window.draw(maze_map);
-    //    robot.setPosition(mousePosition);
     window.draw(robot);
 
     sf::Clock clock;
-
+    /// sort out all the sensors
+    /// TODO: this needs encapsulating in the robot
     sf::Vector2f lfs_pos = rotatePoint(lfs_offs, {0, 0}, robot.getRotation());
     sf::Vector2f lds_pos = rotatePoint(lds_offs, {0, 0}, robot.getRotation());
     sf::Vector2f rds_pos = rotatePoint(rds_offs, {0, 0}, robot.getRotation());
@@ -206,6 +254,7 @@ int main() {
     float rds = sensor_rds.draw(window, image);
     float rfs = sensor_rfs.draw(window, image);
 
+    /// and display the state
     string = std::to_string(clock.restart().asMicroseconds()) + " us\n";
     string += "Robot posn: " + std::to_string((int)robot.getPosition().x) + ", " + std::to_string((int)robot.getPosition().y) + "\n";
     char buffer[20];
