@@ -3,9 +3,7 @@
 #include <SFML/System/Clock.hpp>
 #include <SFML/Window/Event.hpp>
 #include <iostream>
-#include "animation.h"
-#include "entity.h"
-#include "player.h"
+
 /***
  * Create a simple SFML window with custom title text and a couple of shapes drawn in it
  */
@@ -15,8 +13,8 @@ int main() {
   sf::ContextSettings settings;
   settings.antialiasingLevel = 8;  // the number of multisamplings to use. 4 is probably fine
   sf::RenderWindow window{sf::VideoMode(600, 400), WINDOW_TITLE, sf::Style::Default, settings};
+
   window.setVerticalSyncEnabled(true);
-  sf::FloatRect visibleArea(0, 0, (float)window.getSize().x, (float)window.getSize().y);
 
   /***
    * Textures are graphical elements that get loaded into the graphic card memory. Once there, they can
@@ -29,27 +27,52 @@ int main() {
    * If you want access to the original image, you should first load it as an image and then create a
    * texture from that image.
    */
-  /// The spritesheet holds all the required textures
-  sf::Texture chicken_texture;
-  if (!chicken_texture.loadFromFile("./assets/images/chicken.png")) {
-    std::cerr << "Unable to load spaceship textures\n";
+  /// First let us load an image:
+  sf::Image space_things;
+  if (!space_things.loadFromFile("./assets/images/spaceship.png")) {
+    std::cerr << "Unable to load spaceship images\n";
     exit(1);
   }
-  chicken_texture.setSmooth(true);
+  /// Then use it to create the texture on the GPU
+  sf::Texture texture;
+  texture.loadFromImage(space_things);
 
-  /// then we can specify the region of the spritesheet to be used.
-  Animation player_main_animation(chicken_texture, 0, 0, 32, 32, 4, 6);
-  Animation player_left_animation(chicken_texture, 0, 96, 32, 32, 4, 6);
-  Animation player_right_animation(chicken_texture, 0, 32, 32, 32, 4, 6);
+  /// Rectangles are shapes with a width and height
+  /// They can have colours and textures as well as outlines
+  sf::Vector2f size(55, 53);
+  sf::RectangleShape rect(size);
+  rect.setOrigin(size.x / 2, size.y / 2);
+  rect.setPosition(300, 200);
+  /// and we can add a texture reference to the rectangle
+  /// By default the entire texture will be scaled to fit the rectangle
+  rect.setTexture(&texture);
+  /// So we map only a portion of the texture to pull out one image
+  rect.setTextureRect(sf::IntRect(39, 0, 40, 36));
+  rect.setTextureRect(sf::IntRect(0, 153, 55, 53));
+  rect.scale(2, 3);
 
-  Player player(visibleArea.width, visibleArea.height, player_main_animation, visibleArea.width / 2, visibleArea.height / 2, 0, 20);
-  player.setName(PLAYER);
+  /// Sprites are simpler and _require_ a texture. They are the drawable
+  /// representation of a texture
+  /// We will load it direct this time.
+  sf::Texture chicken;
+  if (!chicken.loadFromFile("./assets/images/chicken.png")) {
+    std::cerr << "Unable to load chicken texture\n";
+    exit(1);
+  }
+
+  /// The chicken will be animated by switching the texture rectangle in
+  /// a predefined sequence
+  const int seq[] = {1, 2, 1, 0};
+  sf::Sprite chick;
+  chick.setTexture(chicken);
+  chick.setTextureRect(sf::IntRect(0, 0, 32, 32));
+  chick.setOrigin(16, 16);
+  chick.setPosition(180, 200);
+  chick.scale(2, 2);
+  chick.setColor(sf::Color(255, 255, 0, 255));
 
   sf::Clock deltaClock{};
   int state = 0;
-  bool key_down = false;
-  float vx = 0;
-  float vmax = 150.0;  // pixels per second
 
   /// this is the 'game loop'
   while (window.isOpen()) {
@@ -64,45 +87,33 @@ int main() {
       /// This works because the scene is effectively infinite and the window is just
       /// a view of it starting at (0,0)
       if (event.type == sf::Event::Resized) {
-        visibleArea.width = (float)event.size.width;
-        visibleArea.height = (float)event.size.height;
+        sf::FloatRect visibleArea(0, 0, (float)event.size.width, (float)event.size.height);
         /// Note that constructing a view with a sf::Rect defines the corners
         /// Using two points defines the _centre_ and the width,height
-        window.setView(sf::View(visibleArea));  /// or everything distorts
-        player.setPosition(visibleArea.width / 2, visibleArea.height / 2);
+        window.setView(sf::View(visibleArea));  // or everything distorts
       }
     }
 
-    if (sf::Keyboard::isKeyPressed(sf::Keyboard::Scancode::Left)) {
-      player.setAnimation(player_left_animation);
-      player.setAngle(-90);
-      player.setThrust(true);
-
-      vx = -vmax;
-    } else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Scancode::Right)) {
-      player.setAnimation(player_right_animation);
-      player.setAngle(90);
-      player.setThrust(true);
-      vx = vmax;
-    } else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Scancode::Up)) {
-      player.setAnimation(player_main_animation);
-      player.setAngle(0);
-      player.setThrust(true);
-      vx = 0;
-    }
-
     /// update the objects
-    sf::Time dt = deltaClock.restart();
+    sf::Time time = deltaClock.restart();
+    chick.rotate(90 * time.asSeconds());  /// 90 degrees per second
+
+    float angle = chick.getRotation();
+    float dx = std::cos((angle - 90) * 3.14 / 180) * 200;
+    float dy = std::sin((angle - 90) * 3.14 / 180) * 200;
+    chick.move(sf::Vector2f(dx, dy) * time.asSeconds());
+    /// calculate the next animation frame location
+    chick.setTextureRect(sf::IntRect(32 * seq[state / 5], 0, 32, 32));
+    state = (++state) % 20;
 
     /// rotate the rect and its texture rotates with it.
     /// the graphics card handles all that.
-    float deltax = vx * dt.asSeconds();
-
-    player.update(dt.asSeconds());
+    rect.rotate(45 * time.asSeconds());
 
     /// and redraw the window
     window.clear();
-    player.draw(window);
+    window.draw(rect);
+    window.draw(chick);
     window.display();
   }
 

@@ -96,14 +96,10 @@ int main() {
     /// update the objects
     sf::Time time = deltaClock.restart();
 
-    /// rotate the rect and its texture rotates with it.
-    /// the graphics card handles all that.
-    floor_tile.rotate(45 * time.asSeconds());
-
     /// lets also change the part of the texture we use
     /// just because we can
-    if (++top_row > 16 * 12) {
-      top_row = 0;
+    if (--top_row < 0) {
+      top_row = 28 * 16;
     }
     floor_tile.setTextureRect(sf::IntRect(0, top_row, 64, 64));
 
