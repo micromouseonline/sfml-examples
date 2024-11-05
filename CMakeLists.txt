@@ -85,6 +85,7 @@ set(IMGUI_LIBS PUBLIC ImGui-SFML::ImGui-SFML)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 add_subdirectory(src/001-basic-window-and-shapes)
+add_subdirectory(src/001c-frame-rates)
 add_subdirectory(src/002-shapes-and-textures)
 add_subdirectory(src/002b-sprites)
 add_subdirectory(src/002c-sprite-animated)
