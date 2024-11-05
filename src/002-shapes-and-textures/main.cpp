@@ -27,52 +27,51 @@ int main() {
    * If you want access to the original image, you should first load it as an image and then create a
    * texture from that image.
    */
-  /// First let us load an image:
-  sf::Image space_things;
-  if (!space_things.loadFromFile("./assets/images/spaceship.png")) {
+
+  /// First let us load an image. This tileset contains a stack of 64x64 pixel images.
+  /// Or, if you prefer, an array of 16x16px images in an array 4 wide by 32 high
+  /// Or, an array of 64x64px images in an array 1x8.
+  /// You get to choose.
+  sf::Image tile_set;
+  if (!tile_set.loadFromFile("./assets/images/tiles-64x64.png")) {
     std::cerr << "Unable to load spaceship images\n";
     exit(1);
   }
-  /// Then use it to create the texture on the GPU
+
+  /// Then use it to create the texture on the GPU. We copy the whole thing. It can be sliced
+  /// up later by the GPU
   sf::Texture texture;
-  texture.loadFromImage(space_things);
+  texture.loadFromImage(tile_set);
+  /// QUERY: can we now delete the image?
 
   /// Rectangles are shapes with a width and height
   /// They can have colours and textures as well as outlines
-  sf::Vector2f size(55, 53);
-  sf::RectangleShape rect(size);
-  rect.setOrigin(size.x / 2, size.y / 2);
-  rect.setPosition(300, 200);
+  /// Start with a simple square the same width as our tile set.
+  sf::Vector2f floor_tile_size(64, 64);
+  sf::RectangleShape floor_tile(floor_tile_size);
+  floor_tile.setOrigin(floor_tile_size.x / 2, floor_tile_size.y / 2);
+  floor_tile.setPosition(300, 200);
   /// and we can add a texture reference to the rectangle
   /// By default the entire texture will be scaled to fit the rectangle
-  rect.setTexture(&texture);
+  floor_tile.setTexture(&texture);
   /// So we map only a portion of the texture to pull out one image
-  rect.setTextureRect(sf::IntRect(39, 0, 40, 36));
-  rect.setTextureRect(sf::IntRect(0, 153, 55, 53));
-  rect.scale(2, 3);
+  floor_tile.setTextureRect(sf::IntRect(0, 0, 64, 64));
 
-  /// Sprites are simpler and _require_ a texture. They are the drawable
-  /// representation of a texture
-  /// We will load it direct this time.
-  sf::Texture chicken;
-  if (!chicken.loadFromFile("./assets/images/chicken.png")) {
-    std::cerr << "Unable to load chicken texture\n";
-    exit(1);
-  }
+  /// Now we will have another single tile from the same texture
+  int grid_size = 16;
+  sf::Vector2f static_tile_size(2 * grid_size, 2 * grid_size);
+  sf::RectangleShape static_tile(static_tile_size);
+  static_tile.setPosition(3 * grid_size, 2 * grid_size);
 
-  /// The chicken will be animated by switching the texture rectangle in
-  /// a predefined sequence
-  const int seq[] = {1, 2, 1, 0};
-  sf::Sprite chick;
-  chick.setTexture(chicken);
-  chick.setTextureRect(sf::IntRect(0, 0, 32, 32));
-  chick.setOrigin(16, 16);
-  chick.setPosition(180, 200);
-  chick.scale(2, 2);
-  chick.setColor(sf::Color(255, 255, 0, 255));
+  static_tile.setTexture(&texture);
+  int left = 1 * grid_size;
+  int top = 5 * grid_size;
+  int width = 2 * grid_size;
+  int height = 2 * grid_size;
+  static_tile.setTextureRect(sf::IntRect(left, top, width, height));
 
   sf::Clock deltaClock{};
-  int state = 0;
+  int top_row = 0;
 
   /// this is the 'game loop'
   while (window.isOpen()) {
@@ -96,24 +95,22 @@ int main() {
 
     /// update the objects
     sf::Time time = deltaClock.restart();
-    chick.rotate(90 * time.asSeconds());  /// 90 degrees per second
-
-    float angle = chick.getRotation();
-    float dx = std::cos((angle - 90) * 3.14 / 180) * 200;
-    float dy = std::sin((angle - 90) * 3.14 / 180) * 200;
-    chick.move(sf::Vector2f(dx, dy) * time.asSeconds());
-    /// calculate the next animation frame location
-    chick.setTextureRect(sf::IntRect(32 * seq[state / 5], 0, 32, 32));
-    state = (++state) % 20;
 
     /// rotate the rect and its texture rotates with it.
     /// the graphics card handles all that.
-    rect.rotate(45 * time.asSeconds());
+    floor_tile.rotate(45 * time.asSeconds());
+
+    /// lets also change the part of the texture we use
+    /// just because we can
+    if (++top_row > 16 * 12) {
+      top_row = 0;
+    }
+    floor_tile.setTextureRect(sf::IntRect(0, top_row, 64, 64));
 
     /// and redraw the window
     window.clear();
-    window.draw(rect);
-    window.draw(chick);
+    window.draw(floor_tile);
+    window.draw(static_tile);
     window.display();
   }
 
