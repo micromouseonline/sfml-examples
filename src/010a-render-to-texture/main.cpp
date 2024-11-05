@@ -10,6 +10,19 @@
  *  - create a corresponding image
  *  - examine the pixels in that image
  *
+ * Textures are image data stored in the GPU. They are stored there for maximum performance.
+ * In SFML, sf::RenderTexture is used to create off-screen rendering targets.
+ * sf::RenderTexture is a subclass of sf::RenderTarget, similar to sf::RenderWindow, which is
+ * used for on-screen rendering.
+ *
+ * All drawing is done to a RenderTarget so they make good targets for a drawing canvas.
+ *
+ * RenderTextures are useful for creating complex scenes with multiple views. For example, a
+ * background tilemap. In the GPU, shaders can operate directly on textures for special effects
+ * like blurring.
+ *
+ * Dynamic textures such as minimaps, radar screens, or animations can also be created using
+ * textures and then displayed on the screen.
  */
 
 bool isWithinBounds(const sf::Vector2u& size, int x, int y) {
