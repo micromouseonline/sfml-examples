@@ -12,7 +12,7 @@ int main() {
   /// Any antialiasing has to be set globally when creating the window:
   sf::ContextSettings settings;
   settings.antialiasingLevel = 8;  // the number of multisamplings to use. 4 is probably fine
-  sf::RenderWindow window{sf::VideoMode(600, 400), WINDOW_TITLE, sf::Style::Default, settings};
+  sf::RenderWindow window{sf::VideoMode(1200, 400), WINDOW_TITLE, sf::Style::Default, settings};
   window.setVerticalSyncEnabled(true);
   sf::FloatRect visibleArea(0, 0, (float)window.getSize().x, (float)window.getSize().y);
 
@@ -28,38 +28,26 @@ int main() {
    * texture from that image.
    */
   /// First let us load an image:
-  sf::Texture space_things;
-  if (!space_things.loadFromFile("./assets/images/spaceship.png")) {
-    std::cerr << "Unable to load spaceship textures\n";
+  sf::Texture nixie_digits;
+  if (!nixie_digits.loadFromFile("./assets/images/nixie_red.png")) {
     exit(1);
   }
-
-  /// Rectangles are shapes with a width and height
-  /// They can have colours and textures as well as outlines
-  sf::Sprite ship(space_things);
-  sf::Rect rect_left(0, 40, 48, 36);
-  sf::Rect rect_main(48, 0, 48, 36);
-  sf::Rect rect_right(96, 40, 48, 36);
-  ship.setTextureRect(rect_main);
-  ship.setOrigin(rect_main.width / 2.0f, rect_main.height / 2.0f);
-  ship.setPosition(visibleArea.width / 2, visibleArea.height / 2);
-  ship.scale(1, 1);
-
-  /// Sprites are simpler and _require_ a texture. They are the drawable
-  /// representation of a texture
-  /// We will load it direct this time.
-  sf::Texture chicken;
-  if (!chicken.loadFromFile("./assets/images/chicken.png")) {
-    std::cerr << "Unable to load chicken texture\n";
-    exit(1);
+  int width = 135;
+  int height = 280;
+  int digits = 8;
+  std::vector<sf::Sprite> sprites;
+  for (int i = 0; i < digits; i++) {
+    sf::Sprite sprite(nixie_digits);
+    int n = rand() % 10;
+    // sprite.setScale(0.25, 0.25);
+    sprite.setTextureRect({(width + 10) * n + 1, 50, width, height - 20});
+    sprite.setTextureRect({10 + 145 * n, 50, width, 250});
+    sprite.setPosition(i * width, 25);
+    sprites.push_back(sprite);
   }
 
   sf::Clock deltaClock{};
-  int state = 0;
-  bool key_down = false;
-  float vx = 0;
-  float vmax = 150.0;  // pixels per second
-
+  uint16_t v = 0;
   /// this is the 'game loop'
   while (window.isOpen()) {
     /// process all the inputs
@@ -78,37 +66,17 @@ int main() {
         /// Note that constructing a view with a sf::Rect defines the corners
         /// Using two points defines the _centre_ and the width,height
         window.setView(sf::View(visibleArea));  /// or everything distorts
-        ship.setPosition(visibleArea.getSize().x / 2, visibleArea.getSize().y / 2);
       }
-    }
-
-    if (sf::Keyboard::isKeyPressed(sf::Keyboard::Scancode::Left)) {
-      ship.setTextureRect(rect_left);
-      ship.setOrigin(rect_left.width / 2.0f, rect_left.height / 2.0f);
-      vx = -vmax;
-    } else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Scancode::Right)) {
-      ship.setTextureRect(rect_right);
-      ship.setOrigin(rect_right.width / 2.0f, rect_right.height / 2.0f);
-      vx = vmax;
-    } else {
-      ship.setTextureRect(rect_main);
-      ship.setOrigin(rect_main.width / 2.0f, rect_main.height / 2.0f);
-      vx = 0;
     }
 
     /// update the objects
     sf::Time dt = deltaClock.restart();
 
-    /// rotate the rect and its texture rotates with it.
-    /// the graphics card handles all that.
-    //    ship.rotate(45 * time.asSeconds());
-    float deltax = vx * dt.asSeconds();
-    if ((ship.getPosition().x + deltax > 24) && ((ship.getPosition().x + deltax) < (visibleArea.width - 24))) {
-      ship.move(deltax, 0);
-    }
     /// and redraw the window
     window.clear();
-    window.draw(ship);
+    for (int i = 0; i < digits; i++) {
+      window.draw(sprites[i]);
+    }
     window.display();
   }
 
