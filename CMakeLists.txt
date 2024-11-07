@@ -109,6 +109,8 @@ add_subdirectory(src/012-raycast-collision-detection)
 add_subdirectory(src/201-imgui-basic)
 add_subdirectory(src/301-implot-demo)
 add_subdirectory(src/302-implot-with-imgui)
+add_subdirectory(src/601-top-down-car-race)
+
 add_subdirectory(src/708-tilemap)
 add_subdirectory(src/808-wallmap)
 
