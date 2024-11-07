@@ -12,15 +12,18 @@
 
 /// check out reynold's steering behaviours
 
-const int num = 8;  // checkpoints
-int points[num][2] = {{300, 610}, {1270, 430}, {1380, 2380}, {1900, 2460}, {1970, 1700}, {2550, 1680}, {2560, 3150}, {500, 3300}};
-
+const int waypoint_count = 9;  // checkpoints
+int waypoints[waypoint_count][2] = {{186, 292}, {600, 226}, {690, 1220}, {920, 1270}, {950, 900}, {1200, 810}, {1250, 1500}, {1100, 1640}, {220, 1620}};
 struct Car {
-  float x, y, speed, angle;
+  float x;
+  float y;
+  float speed;
+  float top_speed;
+  float angle;
   int n;
 
   Car() {
-    speed = 2;
+    speed = 1;
     angle = 0;
     n = 0;
   }
@@ -31,18 +34,27 @@ struct Car {
   }
 
   void findTarget() {
-    float tx = points[n][0];
-    float ty = points[n][1];
+    float tx = waypoints[n][0];
+    float ty = waypoints[n][1];
     float beta = angle - atan2(tx - x, -ty + y);
     if (sin(beta) < 0) {
-      angle += 0.025 * speed;
+      angle += 0.010 * speed;
     } else {
-      angle -= 0.025 * speed;
+      angle -= 0.010 * speed;
     }
     float distance_squared_to_target = (x - tx) * (x - tx) + (y - ty) * (y - ty);
     float min_distance_squared = 5 * 5;
-    if (distance_squared_to_target < min_distance_squared)
-      n = (n + 1) % num;
+    if (distance_squared_to_target < min_distance_squared) {
+      n = (n + 1) % waypoint_count;
+    }
+    if (distance_squared_to_target < 100) {
+      speed = top_speed / 10;
+    } else {
+      speed = top_speed;
+    }
+    if (speed < 2.0) {
+      speed = 2.0;
+    }
   }
 };
 
@@ -87,6 +99,28 @@ int main() {
   centre.setFillColor(sf::Color::Blue);
   centre.setPosition((float)texture_size.x / 2, (float)texture_size.y / 2);
 
+  sf::CircleShape waypoint_marker(20);
+  waypoint_marker.setOrigin(10, 10);
+  waypoint_marker.setFillColor(sf::Color::Green);
+  centre.setPosition((float)texture_size.x / 2, (float)texture_size.y / 2);
+
+  sf::Texture car_texture;
+  car_texture.loadFromFile("assets/images/car.png");
+  car_texture.setSmooth(true);
+
+  sf::Sprite sCar(car_texture);
+  sCar.setOrigin(22, 22);
+  float R = 22;
+  const int car_count = 5;
+  Car car[car_count];
+  for (int i = 0; i < car_count; i++) {
+    car[i].x = 150;  //+ i * 50;
+    car[i].y = 1200 - i * 10;
+    car[i].top_speed = 7 + i;
+  }
+
+  sf::Color Colors[10] = {sf::Color::Red, sf::Color::Green, sf::Color::Magenta, sf::Color::Blue, sf::Color::White};
+
   sf::Clock deltaClock{};  /// Keeps track of elapsed time
                            ///////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -126,12 +160,48 @@ int main() {
     //
     sf::Time time = deltaClock.restart();
     ////////////////////////////////////////////////////////////////////////////////////////////////
+
+    for (int i = 0; i < car_count; i++) {
+      car[i].move();
+      car[i].findTarget();
+    }
+
+    // collision
+    for (int i = 0; i < car_count; i++)
+      for (int j = 0; j < car_count; j++) {
+        int dx = 0, dy = 0;
+        while (dx * dx + dy * dy < 4 * R * R) {
+          car[i].x += dx / 10.0;
+          car[i].x += dy / 10.0;
+          car[j].x -= dx / 10.0;
+          car[j].y -= dy / 10.0;
+          dx = car[i].x - car[j].x;
+          dy = car[i].y - car[j].y;
+          if (!dx && !dy)
+            break;
+        }
+      }
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////
     window.clear();
     //    sBackground.setPosition(-offsetX, -offsetY);
     window.draw(sBackground);
 
-    window.draw(centre);
+    int offsetX = 0;
+    int offsetY = 0;
+    for (int i = 0; i < car_count; i++) {
+      sCar.setPosition(car[i].x - offsetX, car[i].y - offsetY);
+      sCar.setRotation(car[i].angle * 180 / 3.141593);
+      sCar.setColor(Colors[i]);
+      window.draw(sCar);
+    }
 
+    /// draw markers for debugging
+    //    for (int i = 0; i < waypoint_count; i++) {
+    //      waypoint_marker.setPosition(waypoints[i][0], waypoints[i][1]);
+    //      window.draw(waypoint_marker);
+    //    }
+    //    window.draw(centre);
     window.display();
   }
 
