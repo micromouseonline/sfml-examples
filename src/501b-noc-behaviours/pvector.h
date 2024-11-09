@@ -5,6 +5,7 @@
 #ifndef IMGUI_SFML_STARTER_PVECTOR_H
 #define IMGUI_SFML_STARTER_PVECTOR_H
 
+#include <cassert>
 #include <cmath>
 #include <iostream>
 #include <random>
@@ -14,14 +15,32 @@ class PVector {
   float x;
   float y;
 
-  // Constructors
-  PVector(float x = 0, float y = 0) : x(x), y(y) {}
+  static constexpr float EPSILON = 1e-6;
 
-  static PVector from_angle(float angle) { return {cosf(angle), sinf(angle)}; }
+  // Constructors
+  explicit PVector(float x = 0, float y = 0) : x(x), y(y) {}
+
+  static PVector from_angle(float angle) { return PVector(cosf(angle), sinf(angle)); }
+
+  static PVector zero() { return PVector(0, 0); }
+  static PVector up() { return PVector(0, 1); }
+  static PVector right() { return PVector(1, 0); }
 
   PVector random() {
-    float r = (float)rand() / (float)RAND_MAX;
-    return from_angle(r * 2 * M_PI);
+    static std::random_device rd;
+    static std::mt19937 gen(rd());
+    std::uniform_real_distribution<float> dist(0, 2 * M_PI);
+    return from_angle(dist(gen));
+  }
+
+  PVector left_normal() const {
+    PVector v(-y, x);
+    return v;
+  }
+
+  PVector right_normal() const {
+    PVector v(y, -x);
+    return v;
   }
 
   // Add two vectors
@@ -35,12 +54,9 @@ class PVector {
 
   // Divide vector by a scalar
   PVector operator/(float n) const {
-    if (n != 0) {
-      return PVector(x / n, y / n);
-    } else {
-      std::cerr << "Error: Division by zero" << std::endl;
-      return PVector();
-    }
+    assert(std::fabs(n) > EPSILON && "Division by zero is not allowed.");
+    float reciprocal = 1.0f / n;
+    return PVector(x * reciprocal, y * reciprocal);
   }
 
   // Compound assignment operators
@@ -63,14 +79,13 @@ class PVector {
   }
 
   PVector& operator/=(float n) {
-    if (n != 0) {
-      x /= n;
-      y /= n;
-    } else {
-      std::cerr << "Error: Division by zero" << std::endl;
-    }
+    assert(std::fabs(n) > EPSILON && "Division by zero is not allowed.");
+    x /= n;
+    y /= n;
     return *this;
   }
+
+  bool operator==(const PVector& v) const { return (std::fabs(x - v.x) < EPSILON) && (std::fabs(y - v.y) < EPSILON); }
 
   // Calculate the magnitude of the vector
   float mag() const { return std::sqrt(x * x + y * y); }
@@ -78,7 +93,7 @@ class PVector {
   // Normalize the vector to a unit vector
   PVector& normalize() {
     float m = mag();
-    if (m != 0) {
+    if (m > EPSILON) {
       *this /= m;
     }
     return *this;
@@ -97,26 +112,16 @@ class PVector {
     return *this;
   }
 
-  // Comparison operators based on magnitude
-  bool operator==(const PVector& v) const { return mag() == v.mag(); }
-  bool operator!=(const PVector& v) const { return mag() != v.mag(); }
-  bool operator<(const PVector& v) const { return mag() < v.mag(); }
-  bool operator<=(const PVector& v) const { return mag() <= v.mag(); }
-  bool operator>(const PVector& v) const { return mag() > v.mag(); }
-  bool operator>=(const PVector& v) const { return mag() >= v.mag(); }
-
   // Calculate the dot product of two vectors
   float dot(const PVector& v) const { return x * v.x + y * v.y; }
 
-  float angle() {
-    static float hdg = 0;
-    if (mag() > 1) {
-      hdg = atan2f(y, x);
-    }
-    return hdg;
-  }
+  float angle() { return atan2f(y, x); }
 
-  float angle_to(PVector& v2) { return acosf(dot(v2)) / (mag() * v2.mag()); }
+  float angle_to(PVector& v2) { return acosf(dot(v2) / (mag() * v2.mag())); }
+
+  float signed_angle_to(const PVector& v) const { return atan2f(v.y, v.x) - atan2f(y, x); }
+
+  float cross(const PVector& v) const { return x * v.y - y * v.x; }
 
   PVector& rotate_to(float theta) {
     float m = mag();
@@ -130,7 +135,10 @@ class PVector {
     return *this;
   }
 
-  void print() const { std::cout << "PVector(" << x << ", " << y << ")" << std::endl; }
+  friend std::ostream& operator<<(std::ostream& os, const PVector& v) {
+    os << "PVector(" << v.x << ", " << v.y << ")";
+    return os;
+  }
 };
 
 #endif  // IMGUI_SFML_STARTER_PVECTOR_H

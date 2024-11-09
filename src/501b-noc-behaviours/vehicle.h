@@ -12,22 +12,25 @@ float map(float x, float in_min, float in_max, float out_min, float out_max) {
 }
 
 float random(float a, float b) {
-  std::random_device rd;
-  std::mt19937 gen(rd());
+  static std::random_device rd;  //  make this globally available
+  static std::mt19937 gen(rd());
   std::uniform_real_distribution<float> dis(a, b);
   return dis(gen);
 }
 
 struct Vehicle {
-  float v_max = 300.0f;
-  float f_max = 5000.0f;
+  float v_max = 1400.0f;
+  float f_max = 900.0f;
   float wanderR = 75;
   float wanderD = 20;
   float change = 1.5;
   float angle = 0;
 
-  PVector wander_circle_pos = {0, 0};
-  PVector wander_target = {0, 0};
+  static constexpr float EPSILON = 1e-6;
+  const float panic_distance = 400;
+
+  PVector wander_circle_pos = PVector(0, 0);
+  PVector wander_target = PVector(0, 0);
   PVector m_position;
   PVector m_velocity;
   PVector m_desired;
@@ -38,7 +41,7 @@ struct Vehicle {
   PVector m_force;
   PVector m_target;
 
-  Vehicle(float x, float y) { m_position = {x, y}; }
+  Vehicle(float x, float y) : m_position(x, y) {}
 
   void apply_force(PVector f) {
     m_acceleration += f;
@@ -49,12 +52,19 @@ struct Vehicle {
     m_velocity += m_acceleration * delta_t;
     m_velocity.limit(v_max);
     m_position += m_velocity * delta_t;
-    m_acceleration = {0, 0};
+    m_acceleration *= 0.1;
   }
 
   void seek(PVector& target) {
+    if (target == m_position) {
+      return;
+    }
     m_target = target;
+
     m_desired = target - m_position;
+    if (m_desired.mag() < 1) {
+      return;
+    }
     m_desired.set_magnitude(v_max);
     PVector steer = m_desired - m_velocity;
     steer.limit(f_max);
@@ -64,6 +74,8 @@ struct Vehicle {
   void flee(PVector& target) {
     m_target = target;
     m_desired = target - m_position;
+    if (m_desired.mag() > panic_distance)
+      return;
     m_desired.set_magnitude(v_max);
     PVector steer = m_desired - m_velocity;
     steer.limit(f_max);
@@ -89,61 +101,66 @@ struct Vehicle {
     apply_force(steer);
   }
 
-  void moveInCircle(float radius, float centerX, float centerY, float omega) {
-    angle += omega;
-    if (angle > 360.0f) {
-      angle -= 360.0f;
-    }
-    if (angle < 0) {
-      angle += 360.0f;
-    }
+  void moveInCircle(float radius, float centerX, float centerY, float omega, float dt) {
+    angle += omega * dt;
+    angle = fmod(angle, 360.0f);
+
     float rad = angle * (M_PI / 180.0f);
     float target_x = centerX + radius * cosf(rad);
     float target_y = centerY + radius * sinf(rad);
-    PVector target = {target_x, target_y};
+    PVector target(target_x, target_y);
     seek(target);
     m_position = target;
+    omega /= 57.29;
+    float vx = -radius * omega * sinf(rad);
+    float vy = radius * omega * cosf(rad);
+    m_velocity = PVector(vx, vy);
   }
+
   void pursue(Vehicle& vehicle) {
     pursue_target = vehicle.m_position;
     target_prediction = vehicle.m_velocity;  // * delta time?
     target_prediction *= 0.2;
     pursue_target += target_prediction;
     m_target = pursue_target;
-    seek(pursue_target);
+    arrive(pursue_target);
   }
 
   void wander() {
     float wander_theta = random(-change, change);
-    wander_circle_pos = m_velocity;
+    PVector velocity = m_velocity;
+    velocity.normalize();
+    wander_circle_pos = velocity;
     wander_circle_pos.set_magnitude(wanderD);
     wander_circle_pos += m_position;
-    float h = m_velocity.angle();
+    float h = velocity.angle();
     PVector c_offs(wanderR * cosf(wander_theta + h), wanderR * sinf(wander_theta + h));
     wander_target = wander_circle_pos + c_offs;
     seek(wander_target);
   }
 
   void check_boundaries(float x_min, float y_min, float x_max, float y_max) {
-    PVector desired = {0, 0};
     float d = m_velocity.mag() / 10;
-    d = 20;
-    if (m_position.x < x_min + d) {
-      desired = {v_max, m_velocity.y};
-    } else if (m_position.x > x_max - d) {
-      desired = {-v_max, m_velocity.y};
-    }
-    if (m_position.y < y_min + d) {
-      desired = {m_velocity.x, v_max};
-    } else if (m_position.y > y_max - d) {
-      desired = {m_velocity.x, -v_max};
-    }
-    if (desired.mag() > 0) {
-      desired.normalize();
-      desired *= v_max;
-      PVector steer = desired - m_velocity;
-      steer.limit(f_max);
-      apply_force(steer);
+    if (m_position.x < x_min + d || m_position.x > x_max - d || m_position.y < y_min + d || m_position.y > y_max - d) {
+      PVector desired;
+      d = 20;
+      if (m_position.x < x_min + d) {
+        desired = PVector(v_max, m_velocity.y);
+      } else if (m_position.x > x_max - d) {
+        desired = PVector(-v_max, m_velocity.y);
+      }
+      if (m_position.y < y_min + d) {
+        desired = PVector(m_velocity.x, v_max);
+      } else if (m_position.y > y_max - d) {
+        desired = PVector(m_velocity.x, -v_max);
+      }
+      if (desired.mag() > 0) {
+        desired.normalize();
+        desired *= v_max;
+        PVector steer = desired - m_velocity;
+        steer.limit(f_max);
+        apply_force(steer);
+      }
     }
   }
 };

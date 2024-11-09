@@ -54,6 +54,15 @@ void draw_vector(sf::RenderTarget& target, PVector pos, PVector vec, sf::Color c
   target.draw(line, 2, sf::Lines);
 }
 
+void draw_line(sf::RenderTarget& target, PVector pos, PVector vec, sf::Color color = sf::Color::White) {
+  sf::Vertex line[2];
+  line[0].position = {pos.x, pos.y};
+  line[0].color = color;
+  line[1].position = {vec.x, vec.y};
+  line[1].color = color;
+  target.draw(line, 2, sf::Lines);
+}
+
 enum {
   DRAW_NONE = 0,
   DRAW_VELOCITY = 1 << 0,
@@ -113,7 +122,7 @@ int main() {
   // these are the autonomous agents
   Vehicle vehicle((float)window.getSize().x / 2, (float)window.getSize().y / 2);
 
-  vehicle.m_velocity = {0, 0};
+  vehicle.m_velocity = PVector();
 
   Vehicle drone(900, 500);
 
@@ -133,8 +142,7 @@ int main() {
     }
     //-------------------------------------------
 
-    drone.moveInCircle(400, 500, 500, 0.5);
-    drone.update(dt);
+    drone.moveInCircle(400, 500, 500, 9, dt);
 
     if (isMouseInsideWindow(window)) {
       sf::Vector2 mousePosition = sf::Mouse::getPosition(window);
@@ -142,8 +150,9 @@ int main() {
       if (sf::Mouse::isButtonPressed(sf::Mouse::Right)) {
         vehicle.arrive(mp);
       } else if (sf::Mouse::isButtonPressed(sf::Mouse::Left)) {
-        vehicle.seek(mp);
-        //        vehicle.pursue(drone);
+        //        vehicle.seek(mp);
+        //        vehicle.seek(drone.m_position);
+        vehicle.pursue(drone);
         //        vehicle.wander();
       } else {
       }
@@ -156,9 +165,9 @@ int main() {
     draw_vehicle(window, vehicle, DRAW_VELOCITY + DRAW_FORCE + DRAW_DESIRED, sf::Color::White, &sprite);
     draw_vehicle(window, drone, DRAW_VELOCITY, sf::Color::White);
     window.display();
-    vehicle.m_force = {0, 0};
-    vehicle.m_desired = {0, 0};
-    vehicle.m_target = {0, 0};
+    vehicle.m_force = PVector();
+    vehicle.m_desired = PVector();
+    vehicle.m_target = PVector();
   }
 
   return 0;
