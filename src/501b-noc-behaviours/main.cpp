@@ -58,11 +58,10 @@ enum {
   DRAW_NONE = 0,
   DRAW_VELOCITY = 1 << 0,
   DRAW_FORCE = 1 << 2,
-  DRAW_TARGET = 1 << 3,
-  DRAW_DESIRED = 1 << 4,
+  DRAW_DESIRED = 1 << 3,
 };
 
-void draw_vehicle(sf::RenderTarget& target, Vehicle& vehicle, int flags, sf::Color color = sf::Color::White, sf::Sprite* sprite = nullptr) {
+void draw_vehicle(sf::RenderTarget& canvas, Vehicle& vehicle, int flags, sf::Color color = sf::Color::White, sf::Sprite* sprite = nullptr) {
   sf::CircleShape blob(4);
   blob.setOrigin(2, 2);
   blob.setFillColor(color);
@@ -70,26 +69,25 @@ void draw_vehicle(sf::RenderTarget& target, Vehicle& vehicle, int flags, sf::Col
   PVector vel = vehicle.m_velocity;
   PVector force = vehicle.m_force;
   PVector desired = vehicle.m_desired;
-  PVector tgt = vehicle.m_target;
 
   blob.setPosition(pos.x, pos.y);
-  target.draw(blob);
+  canvas.draw(blob);
   if (sprite) {
     sprite->setPosition(pos.x, pos.y);
     sprite->setRotation(vel.angle() * 57.29 + 90);
-    target.draw(*sprite);
+    canvas.draw(*sprite);
   }
   if (flags == DRAW_NONE) {
     return;
   }
   if (flags & DRAW_VELOCITY) {
-    draw_vector(target, pos, vel, sf::Color::Blue);
+    draw_vector(canvas, pos, vel, sf::Color::Blue);
   }
   if (flags & DRAW_FORCE) {
-    draw_vector(target, pos, force, sf::Color::Yellow);
+    draw_vector(canvas, pos, force, sf::Color::Yellow);
   }
   if (flags & DRAW_DESIRED) {
-    draw_vector(target, pos, desired, sf::Color::Green);
+    draw_vector(canvas, pos, desired, sf::Color::Green);
   }
 }
 
@@ -115,11 +113,9 @@ int main() {
   // these are the autonomous agents
   Vehicle vehicle((float)window.getSize().x / 2, (float)window.getSize().y / 2);
 
-  vehicle.m_velocity = {100, 0};
+  vehicle.m_velocity = {0, 0};
 
   Vehicle drone(900, 500);
-
-  sf::Vertex line[2] = {{{0, 0}, sf::Color::Cyan}, {{0, 0}, sf::Color::Red}};
 
   sf::Clock deltaClock{};  /// Keeps track of elapsed time
   while (window.isOpen()) {
@@ -146,9 +142,10 @@ int main() {
       if (sf::Mouse::isButtonPressed(sf::Mouse::Right)) {
         vehicle.arrive(mp);
       } else if (sf::Mouse::isButtonPressed(sf::Mouse::Left)) {
-        vehicle.pursue(drone);
+        vehicle.seek(mp);
+        //        vehicle.pursue(drone);
+        //        vehicle.wander();
       } else {
-        vehicle.wander();
       }
     }
     vehicle.check_boundaries(0, 0, 1000, 1000);

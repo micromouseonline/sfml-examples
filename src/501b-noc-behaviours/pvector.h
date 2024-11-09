@@ -17,7 +17,7 @@ class PVector {
   // Constructors
   PVector(float x = 0, float y = 0) : x(x), y(y) {}
 
-  PVector from_angle(float angle) { return {cosf(angle), sinf(angle)}; }
+  static PVector from_angle(float angle) { return {cosf(angle), sinf(angle)}; }
 
   PVector random() {
     float r = (float)rand() / (float)RAND_MAX;
@@ -91,10 +91,8 @@ class PVector {
   }
 
   PVector& limit(float lim) {
-    float m = mag();
-    if (m > lim) {
-      *this /= m;
-      *this *= lim;
+    if (mag() > lim) {
+      set_magnitude(lim);
     }
     return *this;
   }
@@ -118,7 +116,7 @@ class PVector {
     return hdg;
   }
 
-  float angle_to(PVector& v2) { return acosf(dot(v2)) / mag() / v2.mag(); }
+  float angle_to(PVector& v2) { return acosf(dot(v2)) / (mag() * v2.mag()); }
 
   PVector& rotate_to(float theta) {
     float m = mag();
