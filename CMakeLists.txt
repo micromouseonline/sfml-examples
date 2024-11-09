@@ -110,6 +110,7 @@ add_subdirectory(src/201-imgui-basic)
 add_subdirectory(src/301-implot-demo)
 add_subdirectory(src/302-implot-with-imgui)
 add_subdirectory(src/501a-noc-vectors)
+add_subdirectory(src/501b-noc-behaviours)
 
 add_subdirectory(src/601-top-down-car-race)
 
