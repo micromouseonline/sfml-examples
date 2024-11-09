@@ -19,15 +19,16 @@ float random(float a, float b) {
 }
 
 struct Vehicle {
-  float v_max = 1400.0f;
-  float f_max = 900.0f;
+  const float v_max_limit = 1200;
+  static constexpr float EPSILON = 1e-6;
+  static constexpr float default_range = 100;
+  const float panic_distance = 400;
+  float v_max = 400.0f;
+  float f_max = 400.0f;
   float wanderR = 75;
   float wanderD = 20;
   float change = 1.5;
   float angle = 0;
-
-  static constexpr float EPSILON = 1e-6;
-  const float panic_distance = 400;
 
   PVector wander_circle_pos = PVector(0, 0);
   PVector wander_target = PVector(0, 0);
@@ -52,7 +53,8 @@ struct Vehicle {
     m_velocity += m_acceleration * delta_t;
     m_velocity.limit(v_max);
     m_position += m_velocity * delta_t;
-    m_acceleration *= 0.1;
+    m_acceleration.set_magnitude(0.0f);
+    v_max = v_max_limit;
   }
 
   void seek(PVector& target) {
@@ -65,7 +67,7 @@ struct Vehicle {
     if (m_desired.mag() < 1) {
       return;
     }
-    m_desired.set_magnitude(v_max);
+    m_desired.set_magnitude(v_max_limit);
     PVector steer = m_desired - m_velocity;
     steer.limit(f_max);
     apply_force(steer);
@@ -82,15 +84,17 @@ struct Vehicle {
     apply_force(steer * -1);
   }
 
-  void arrive(PVector& target) {
+  void arrive(PVector& target, float range = default_range) {
     m_target = target;
     m_desired = target - m_position;
     float d = m_desired.mag();
-    if (d < 1) {
+    if (d < 1.0f) {
+      m_velocity = m_desired;
+      m_velocity.set_magnitude(0.001);
       return;
     }
-    float range = 100;
     if (d < range) {
+      v_max = v_max_limit * d / range;
       float m = map(d, 0, range, 0, v_max);
       m_desired.set_magnitude(m);
     } else {
@@ -103,9 +107,8 @@ struct Vehicle {
 
   void moveInCircle(float radius, float centerX, float centerY, float omega, float dt) {
     angle += omega * dt;
-    angle = fmod(angle, 360.0f);
-
-    float rad = angle * (M_PI / 180.0f);
+    angle = fmodf(angle, 360.0f);
+    float rad = angle * float(M_PI / 180.0f);
     float target_x = centerX + radius * cosf(rad);
     float target_y = centerY + radius * sinf(rad);
     PVector target(target_x, target_y);
@@ -119,8 +122,8 @@ struct Vehicle {
 
   void pursue(Vehicle& vehicle) {
     pursue_target = vehicle.m_position;
-    target_prediction = vehicle.m_velocity;  // * delta time?
-    target_prediction *= 0.2;
+    target_prediction = vehicle.m_velocity;
+    target_prediction *= 0.1;
     pursue_target += target_prediction;
     m_target = pursue_target;
     arrive(pursue_target);
@@ -143,7 +146,7 @@ struct Vehicle {
     float d = m_velocity.mag() / 10;
     if (m_position.x < x_min + d || m_position.x > x_max - d || m_position.y < y_min + d || m_position.y > y_max - d) {
       PVector desired;
-      d = 20;
+      d = 120;
       if (m_position.x < x_min + d) {
         desired = PVector(v_max, m_velocity.y);
       } else if (m_position.x > x_max - d) {
