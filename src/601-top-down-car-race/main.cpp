@@ -1,6 +1,8 @@
 #include <iostream>
 
+#include <algorithm>
 #include <cmath>
+#include "../501a-noc-vectors/pvector.h"
 #include "SFML/Graphics.hpp"
 #include "SFML/System/Clock.hpp"
 #include "SFML/Window/Event.hpp"
@@ -14,33 +16,48 @@
 
 const int waypoint_count = 9;  // checkpoints
 int waypoints[waypoint_count][2] = {{186, 292}, {600, 226}, {690, 1220}, {920, 1270}, {950, 900}, {1200, 810}, {1250, 1500}, {1100, 1640}, {220, 1620}};
-struct Car {
+struct Vehicle {
   float x;
   float y;
+  float theta = 0;
   float speed;
   float top_speed;
-  float angle;
+  //  float angle;
   int n;
+  float v_max = 360.0f;
+  PVector m_position;
+  PVector m_velocity;
+  PVector m_acceleration;
 
-  Car() {
+  Vehicle() {
     speed = 1;
-    angle = 0;
+    theta = 0;
     n = 0;
+    m_velocity = PVector(1, 0);
+  }
+
+  void apply_force(PVector f) { m_acceleration += f; }
+
+  void update(float delta_t) {
+    m_velocity += m_acceleration * delta_t;
+    m_velocity.limit(v_max);
+    m_position += m_velocity * delta_t;
+    m_acceleration = PVector(0, 0);
   }
 
   void move() {
-    x += sin(angle) * speed;
-    y -= cos(angle) * speed;
+    x += sin(theta) * speed;
+    y -= cos(theta) * speed;
   }
 
   void findTarget() {
     float tx = waypoints[n][0];
     float ty = waypoints[n][1];
-    float beta = angle - atan2(tx - x, -ty + y);
+    float beta = theta - atan2(tx - x, -ty + y);
     if (sin(beta) < 0) {
-      angle += 0.010 * speed;
+      theta += 0.010 * speed;
     } else {
-      angle -= 0.010 * speed;
+      theta -= 0.010 * speed;
     }
     float distance_squared_to_target = (x - tx) * (x - tx) + (y - ty) * (y - ty);
     float min_distance_squared = 5 * 5;
@@ -74,6 +91,8 @@ void updateView(sf::RenderWindow& window, sf::Texture& bg_texture, float zoom_fa
 }
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 int main() {
   /// Any antialiasing has to be set globally when creating the window:
   sf::ContextSettings settings;
@@ -83,7 +102,7 @@ int main() {
   window.setVerticalSyncEnabled(true);
 
   sf::Texture bg_texture;
-  bg_texture.loadFromFile("assets/images/background.png");  // 1440x1824
+  bg_texture.loadFromFile("assets/images/course.png");  // 1440x1824
   sf::Sprite sBackground(bg_texture);
 
   sf::Vector2u texture_size = bg_texture.getSize();
@@ -112,12 +131,17 @@ int main() {
   sCar.setOrigin(22, 22);
   float R = 22;
   const int car_count = 5;
-  Car car[car_count];
+  Vehicle car[car_count];
   for (int i = 0; i < car_count; i++) {
     car[i].x = 150;  //+ i * 50;
     car[i].y = 1200 - i * 10;
-    car[i].top_speed = 7 + i;
+    car[i].top_speed = 4 + i;
   }
+
+  Vehicle mini;
+  mini.m_position = PVector(150, 1300);
+  mini.m_velocity = PVector(0, 0);
+  mini.m_acceleration = PVector(20, -200);
 
   sf::Color Colors[10] = {sf::Color::Red, sf::Color::Green, sf::Color::Magenta, sf::Color::Blue, sf::Color::White};
 
@@ -125,6 +149,7 @@ int main() {
                            ///////////////////////////////////////////////////////////////////////////////////////////////////
 
   while (window.isOpen()) {
+    sf::Time time = deltaClock.restart();
     sf::Event event{};
     while (window.pollEvent(event)) {
       /// This is how you listen for the window close button being pressed
@@ -158,7 +183,6 @@ int main() {
       //      }
     }
     //
-    sf::Time time = deltaClock.restart();
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
     for (int i = 0; i < car_count; i++) {
@@ -182,6 +206,10 @@ int main() {
         }
       }
 
+    sf::CircleShape blob(20);
+    blob.setOrigin(10, 10);
+    blob.setFillColor(sf::Color::Red);
+
     ////////////////////////////////////////////////////////////////////////////////////////////////
     window.clear();
     //    sBackground.setPosition(-offsetX, -offsetY);
@@ -191,16 +219,25 @@ int main() {
     int offsetY = 0;
     for (int i = 0; i < car_count; i++) {
       sCar.setPosition(car[i].x - offsetX, car[i].y - offsetY);
-      sCar.setRotation(car[i].angle * 180 / 3.141593);
+      sCar.setRotation(car[i].theta * 180 / 3.141593);
       sCar.setColor(Colors[i]);
       window.draw(sCar);
     }
+    PVector force(10, 0);
+    //    force.rotate_to(mini.m_velocity.angle() + M_PI / 2);
+    mini.apply_force(force);
+    force.rotate_by(M_PI / 2);
+    force /= 2;
+    mini.apply_force(force);
+    mini.update(time.asSeconds());
+    blob.setPosition(mini.m_position.x, mini.m_position.y);
+    window.draw(blob);
 
     /// draw markers for debugging
-    //    for (int i = 0; i < waypoint_count; i++) {
-    //      waypoint_marker.setPosition(waypoints[i][0], waypoints[i][1]);
-    //      window.draw(waypoint_marker);
-    //    }
+    for (int i = 0; i < waypoint_count; i++) {
+      waypoint_marker.setPosition(waypoints[i][0], waypoints[i][1]);
+      window.draw(waypoint_marker);
+    }
     //    window.draw(centre);
     window.display();
   }
