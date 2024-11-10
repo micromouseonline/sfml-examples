@@ -95,11 +95,9 @@ struct Vehicle {
     }
     if (d < range) {
       v_max = v_max_limit * d / range;
-      float m = map(d, 0, range, 0, v_max);
-      m_desired.set_magnitude(m);
-    } else {
-      m_desired.set_magnitude(v_max);
     }
+    m_desired.set_magnitude(v_max);
+
     PVector steer = m_desired - m_velocity;
     steer.limit(f_max);
     apply_force(steer);
