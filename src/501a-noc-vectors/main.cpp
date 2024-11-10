@@ -14,45 +14,7 @@
 const int WINDOW_WIDTH = 1000;
 const int WINDOW_HEIGHT = 1000;
 
-struct Mover {
-  float v_max = 360.0f;
-  PVector m_position;
-  PVector m_velocity;
-  PVector m_acceleration;
-
-  Mover(float x, float y) { m_position = {x, y}; }
-
-  void apply_force(PVector f) { m_acceleration += f; }
-
-  void update(float delta_t) {
-    m_velocity += m_acceleration * delta_t;
-    m_velocity.limit(v_max);
-    m_position += m_velocity * delta_t;
-    if (m_position.x > WINDOW_WIDTH) {
-      m_velocity.x *= -1;
-    }
-    if (m_position.x < 0) {
-      m_velocity.x *= -1;
-    }
-    if (m_position.y > WINDOW_HEIGHT) {
-      m_velocity.y *= -1;
-    }
-    if (m_position.y < 0) {
-      m_velocity.y *= -1;
-    }
-
-    m_acceleration = {0, 0};
-  }
-
-  void draw(sf::RenderTarget& target) {
-    float r = 10.0f;
-    sf::CircleShape blob(r);
-    blob.setOrigin(r / 2, r / 2);
-    blob.setFillColor(sf::Color::Red);
-    blob.setPosition(m_position.x, m_position.y);
-    target.draw(blob);
-  }
-};
+#include "vehicle.h"
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void updateView(sf::RenderWindow& window, sf::Texture& bg_texture, float zoom_factor = 1.0) {
@@ -70,15 +32,68 @@ void updateView(sf::RenderWindow& window, sf::Texture& bg_texture, float zoom_fa
 }
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void vector_test() {
-}
-
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 bool isMouseInsideWindow(const sf::RenderWindow& window) {      // Get the current mouse position relative to the window
   sf::Vector2i mousePosition = sf::Mouse::getPosition(window);  // Get the window size
   sf::Vector2u windowSize = window.getSize();                   // Check if the mouse position is within the window bounds
   return (mousePosition.x >= 0 && mousePosition.x < static_cast<int>(windowSize.x) && mousePosition.y >= 0 && mousePosition.y < static_cast<int>(windowSize.y));
+}
+
+void draw_vector(sf::RenderTarget& target, PVector pos, PVector vec, sf::Color color = sf::Color::White) {
+  sf::Vertex line[2];
+  line[0].position = {pos.x, pos.y};
+  line[0].color = color;
+  vec += pos;
+  line[1].position = {vec.x, vec.y};
+  line[1].color = color;
+  target.draw(line, 2, sf::Lines);
+}
+
+void draw_line(sf::RenderTarget& target, PVector pos, PVector vec, sf::Color color = sf::Color::White) {
+  sf::Vertex line[2];
+  line[0].position = {pos.x, pos.y};
+  line[0].color = color;
+  line[1].position = {vec.x, vec.y};
+  line[1].color = color;
+  target.draw(line, 2, sf::Lines);
+}
+
+enum {
+  DRAW_NONE = 0,
+  DRAW_VELOCITY = 1 << 0,
+  DRAW_FORCE = 1 << 2,
+  DRAW_DESIRED = 1 << 3,
+};
+
+void draw_vehicle(sf::RenderTarget& canvas, Vehicle& vehicle, int flags, sf::Color color = sf::Color::White, sf::Sprite* sprite = nullptr) {
+  sf::CircleShape blob(6);
+  blob.setOrigin(3, 3);
+  blob.setFillColor(color);
+  PVector pos = vehicle.m_position;
+  PVector vel = vehicle.m_velocity;
+  PVector force = vehicle.m_force;
+  PVector desired = vehicle.m_desired;
+
+  blob.setPosition(pos.x, pos.y);
+  canvas.draw(blob);
+  if (sprite) {
+    sprite->setPosition(pos.x, pos.y);
+    sprite->setRotation(vel.angle() * 57.29 + 90);
+    canvas.draw(*sprite);
+  }
+  if (flags == DRAW_NONE) {
+    return;
+  }
+  if (flags & DRAW_VELOCITY) {
+    draw_vector(canvas, pos, vel, sf::Color::Blue);
+  }
+  if (flags & DRAW_FORCE) {
+    draw_vector(canvas, pos, force, sf::Color::Yellow);
+  }
+  if (flags & DRAW_DESIRED) {
+    draw_vector(canvas, pos, desired, sf::Color::Green);
+  }
 }
 
 int main() {
@@ -91,8 +106,8 @@ int main() {
   //  window.setVerticalSyncEnabled(true);
 
   sf::Clock deltaClock{};  /// Keeps track of elapsed time
-  Mover mover((float)window.getSize().x / 2, (float)window.getSize().y / 2);
-  mover.m_velocity = {150, -50};
+  Vehicle mover((float)window.getSize().x / 2, (float)window.getSize().y / 2);
+  //  mover.m_velocity = {150, -50};
 
   while (window.isOpen()) {
     sf::Time time = deltaClock.restart();
@@ -111,16 +126,14 @@ int main() {
     if (isMouseInsideWindow(window)) {
       sf::Vector2 mousePosition = sf::Mouse::getPosition(window);
       PVector mp(mousePosition.x, mousePosition.y);
-      dir = mp - mover.m_position;
-      dir.normalize();
-      dir *= 220;
+      mover.arrive(mp);
     }
-    mover.apply_force(dir);
+    //    mover.apply_force(dir);
     mover.update(time.asSeconds());
 
     window.clear();
-    mover.draw(window);
 
+    draw_vehicle(window, mover, DRAW_VELOCITY);
     window.display();
   }
 
