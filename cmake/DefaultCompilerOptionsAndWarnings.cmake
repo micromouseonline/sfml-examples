@@ -19,13 +19,16 @@ set(COMMON_CLANG_AND_GCC_WARNINGS
 set(DEFAULT_CLANG_OPTIONS
     ${COMMON_CLANG_AND_GCC_WARNINGS}
     -Wmost
-    -fcolor-diagnostics
+    -fno-color-diagnostics
 )
 
 # GCC specific options
 set(DEFAULT_GCC_OPTIONS
     ${COMMON_CLANG_AND_GCC_WARNINGS}
-    -fdiagnostics-color
+
+    # -fdiagnostics-color
+    -fno-diagnostics-color
+    -fdiagnostics-color=never
 )
 
 # MSVC specific options
