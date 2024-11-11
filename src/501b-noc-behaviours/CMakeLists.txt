@@ -3,8 +3,6 @@ set(APP ${CURRENT_DIR_NAME})
 add_definitions(-DWINDOW_TITLE=\"${APP}\")
 
 add_executable(${APP} ""
-        pvector.h
-        vehicle.h
 )
 target_sources(${APP} PRIVATE
         main.cpp

@@ -3,7 +3,7 @@ set(APP ${CURRENT_DIR_NAME})
 add_definitions(-DWINDOW_TITLE=\"${APP}\")
 
 add_executable(${APP} ""
-        pvector.h)
+)
 target_sources(${APP} PRIVATE
         main.cpp
 )

@@ -16,26 +16,26 @@ include(${CMAKE_SOURCE_DIR}/cmake/DefaultCompilerOptionsAndWarnings.cmake)
 include(${CMAKE_SOURCE_DIR}/cmake/print_compiler_info.cmake)
 
 macro(print_compiler_info)
-    message(STATUS "Compiler: ${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION}")
+        message(STATUS "Compiler: ${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION}")
 endmacro()
 
 # Define the add_compiler_info function
 function(add_compiler_info target)
-    add_custom_command(
-            TARGET ${target} PRE_BUILD
-            COMMAND ${CMAKE_COMMAND} -E echo "C++ Compiler ID: ${CMAKE_CXX_COMPILER_ID}"
-            COMMAND ${CMAKE_COMMAND} -E echo "C++ Compiler Version: ${CMAKE_CXX_COMPILER_VERSION}"
-    )
+        add_custom_command(
+                TARGET ${target} PRE_BUILD
+                COMMAND ${CMAKE_COMMAND} -E echo "C++ Compiler ID: ${CMAKE_CXX_COMPILER_ID}"
+                COMMAND ${CMAKE_COMMAND} -E echo "C++ Compiler Version: ${CMAKE_CXX_COMPILER_VERSION}"
+        )
 endfunction()
 
 function(add_data_file_copy target)
-    add_custom_command(
-            TARGET ${target} POST_BUILD
-            COMMENT "Copying data files to binary directory"
-            COMMAND ${CMAKE_COMMAND} -E make_directory ${DATA_DEST_DIR}
-            COMMAND ${CMAKE_COMMAND} -E copy_directory ${DATA_SOURCE_DIR} ${DATA_DEST_DIR}
-            DEPENDS ${DATA_SOURCE_DIR}
-    )
+        add_custom_command(
+                TARGET ${target} POST_BUILD
+                COMMENT "Copying data files to binary directory"
+                COMMAND ${CMAKE_COMMAND} -E make_directory ${DATA_DEST_DIR}
+                COMMAND ${CMAKE_COMMAND} -E copy_directory ${DATA_SOURCE_DIR} ${DATA_DEST_DIR}
+                DEPENDS ${DATA_SOURCE_DIR}
+        )
 endfunction()
 
 # static linking for easy installation
@@ -75,6 +75,7 @@ set(SFML_LIBS sfml-graphics sfml-system sfml-window)
 set(IMGUI_LIBS ImGui-SFML::ImGui-SFML)
 include_directories(${imgui_SOURCE_DIR})
 include_directories(libs/implot)
+include_directories(libs/utils)
 
 add_subdirectory(libs/implot)
 set(IMPLOT_LIBS PUBLIC implot)
@@ -138,10 +139,8 @@ set(DATA_SOURCE_DIR ${CMAKE_SOURCE_DIR}/assets)
 set(ASSETS_SOURCE_DIR "${CMAKE_SOURCE_DIR}/assets")
 set(ASSETS_DEST_DIR "${CMAKE_BINARY_DIR}/assets")
 
-
 # Define the directory where you want to copy the data files
 set(DATA_DEST_DIR ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/assets)
-
 
 add_custom_target(show_compiler_info ALL
         COMMAND ${CMAKE_COMMAND} -E echo "C++ Compiler path: ${CMAKE_CXX_COMPILER}"
@@ -158,7 +157,6 @@ add_custom_target(copy_data_files ALL
 )
 
 # Set a dependency on copy_data_files for each of your target executables
-foreach (TARGET_EXECUTABLE ${TARGET_EXECUTABLES})
-    add_dependencies(${TARGET_EXECUTABLE} copy_data_files)
-endforeach ()
-
+foreach(TARGET_EXECUTABLE ${TARGET_EXECUTABLES})
+        add_dependencies(${TARGET_EXECUTABLE} copy_data_files)
+endforeach()
