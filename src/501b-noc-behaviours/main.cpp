@@ -72,7 +72,7 @@ enum {
 
 void draw_vehicle(sf::RenderTarget& canvas, Vehicle& vehicle, int flags, sf::Color color = sf::Color::White, sf::Sprite* sprite = nullptr) {
   sf::CircleShape blob(6);
-  blob.setOrigin(3, 3);
+  blob.setOrigin(6, 6);
   blob.setFillColor(color);
   PVector pos = vehicle.m_position;
   PVector vel = vehicle.m_velocity;
@@ -142,7 +142,7 @@ int main() {
     }
     //-------------------------------------------
 
-    drone.moveInCircle(400, 500, 500, 45, dt);
+    drone.moveInCircle(400, 500, 500, 15, dt);
 
     if (isMouseInsideWindow(window)) {
       sf::Vector2 mousePosition = sf::Mouse::getPosition(window);
