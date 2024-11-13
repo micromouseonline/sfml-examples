@@ -15,6 +15,13 @@
 const int WINDOW_WIDTH = 1000;
 const int WINDOW_HEIGHT = 1000;
 
+enum Behaviour {
+  IDLE = 0,
+  SEEK,
+  FLEE,
+  ARRIVE,
+  PURSUE,
+};
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void updateView(sf::RenderWindow& window, sf::Texture& bg_texture, float zoom_factor = 1.0) {
   sf::Vector2u texture_size = bg_texture.getSize();
@@ -123,13 +130,15 @@ int main() {
   Vehicle vehicle((float)window.getSize().x / 2, (float)window.getSize().y / 2);
 
   vehicle.m_velocity = PVector();
+  int vehicle_behaviour = IDLE;
 
   Vehicle drone(900, 500);
-
+  float time_accumulator = 0;
   sf::Clock deltaClock{};  /// Keeps track of elapsed time
   while (window.isOpen()) {
     sf::Time time = deltaClock.restart();
     float dt = time.asSeconds();
+    time_accumulator += dt;
     sf::Event event{};
     while (window.pollEvent(event)) {
       /// This is how you listen for the window close button being pressed
@@ -141,24 +150,41 @@ int main() {
       }
     }
     //-------------------------------------------
-
-    drone.moveInCircle(400, 500, 500, 15, dt);
-
+    vehicle_behaviour = IDLE;
+    sf::Vector2 mousePosition = sf::Mouse::getPosition(window);
+    PVector mp(mousePosition.x, mousePosition.y);
     if (isMouseInsideWindow(window)) {
-      sf::Vector2 mousePosition = sf::Mouse::getPosition(window);
-      PVector mp(mousePosition.x, mousePosition.y);
       if (sf::Mouse::isButtonPressed(sf::Mouse::Right)) {
-        vehicle.arrive(mp);
+        vehicle_behaviour = ARRIVE;
       } else if (sf::Mouse::isButtonPressed(sf::Mouse::Left)) {
-        //        vehicle.seek(mp);
-        //        vehicle.seek(drone.m_position);
-        vehicle.pursue(drone);
-        //        vehicle.wander();
+        vehicle_behaviour = PURSUE;
       } else {
       }
     }
     vehicle.check_boundaries(0, 0, 1000, 1000);
-    vehicle.update(dt);
+    const float time_step = 0.001;
+    while (time_accumulator > time_step) {
+      drone.moveInCircle(400, 500, 500, 15, time_step);
+      switch (vehicle_behaviour) {
+        case SEEK:
+          vehicle.seek(mp);
+          break;
+        case FLEE:
+          vehicle.flee(mp);
+          break;
+        case ARRIVE:
+          vehicle.arrive(mp);
+          break;
+        case PURSUE:
+          vehicle.pursue(drone);
+          break;
+        default:
+          break;
+      }
+
+      vehicle.update(time_step);
+      time_accumulator -= time_step;
+    }
 
     //-------------------------------------------
     window.clear();
