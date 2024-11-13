@@ -114,11 +114,8 @@ struct Vehicle {
     float target_y = centerY + radius * sinf(rad);
     PVector target(target_x, target_y);
     seek(target);
+    m_velocity = (target - m_position) * 400;  // just for display purposes
     m_position = target;
-    omega /= 57.29;
-    float vx = -radius * omega * sinf(rad);
-    float vy = radius * omega * cosf(rad);
-    m_velocity = PVector(vx, vy);
   }
 
   void pursue(Vehicle& vehicle) {
