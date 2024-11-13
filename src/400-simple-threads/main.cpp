@@ -6,6 +6,7 @@
 #include "SFML/Graphics.hpp"
 #include "SFML/System/Clock.hpp"
 #include "SFML/Window/Event.hpp"
+#include "button.h"
 
 /**
  * Threads are a way to allocate many tasks in a process to their own execution unit.
@@ -111,7 +112,7 @@ void simple_task(int thread_id, int increments) {
       ++shared_counter;
       std::cout << "Thread " << thread_id << " incremented counter to " << shared_counter << std::endl;
     }
-    std::this_thread::sleep_for(std::chrono::milliseconds(666));
+    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
   }
 }
 
@@ -122,9 +123,12 @@ void simple_task(int thread_id, int increments) {
  */
 std::atomic<bool> keep_making_boxes(true);
 void endless_task() {
-  while (keep_making_boxes) {
-    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+  while (true) {
+    if (!keep_making_boxes) {
+      break;
+    }
     worker_boxes++;
+    std::this_thread::sleep_for(std::chrono::milliseconds(150));
   }
   std::lock_guard<std::mutex> lock(worker_mutex);
   std::cout << "Worker finished after " << worker_boxes << " boxes." << std::endl;
@@ -144,16 +148,20 @@ int main() {
   }
   sf::Sprite chest(texture);
 
-  sf::Font dm_font;
-  if (!dm_font.loadFromFile("./assets/fonts/national-park.otf")) {
+  sf::Font font;
+  if (!font.loadFromFile("./assets/fonts/national-park.otf")) {
     exit(1);
   }
 
   sf::Text text;
-  text.setFont(dm_font);
+  text.setFont(font);
   text.setCharacterSize(32);
   text.setFillColor(sf::Color(140, 91, 54));
   text.setPosition(50, 5);
+
+  float w = 80;
+  Button start_button((800 - w) / 2, 300, w, 30, "START", font);
+  bool started = false;
 
   /**
    * Starting the simple threads
@@ -165,12 +173,7 @@ int main() {
   const int increments = 6;    /// Number of increments per thread
   std::vector<std::thread> threads;
   threads.reserve(num_threads);
-  for (int i = 0; i < num_threads; ++i) {
-    threads.emplace_back(simple_task, i, increments);
-  }
-
-  /// this immediately kicks off the task
-  std::thread worker(endless_task);
+  std::thread worker;
 
   /// now we can do the main loop
   while (window.isOpen()) {
@@ -189,12 +192,26 @@ int main() {
         sf::FloatRect visibleArea(0, 0, (float)event.size.width, (float)event.size.height);
         window.setView(sf::View(visibleArea));  // or everything distorts
       }
+      ButtonEvent buttonEvent = start_button.handleEvent(event, window);
+      if (!started && buttonEvent == ButtonEvent::Released) {
+        worker = std::thread(endless_task);  /// this immediately kicks off the task
+        for (int i = 0; i < num_threads; ++i) {
+          threads.emplace_back(simple_task, i, increments);
+        }
+        started = true;
+      }
     }
     ////  UPDATE    //////////////////////////////////////////////////////////////////////
 
     ////  DISPLAY   //////////////////////////////////////////////////////////////////////
-    window.clear();
+    if (!started) {
+      window.clear();
+      start_button.draw(window);
+      window.display();
+      continue;
+    }
 
+    window.clear();
     char buf[32];
     sprintf(buf, "BOXES: %3d", (int)worker_boxes);
     text.setString(buf);
@@ -208,6 +225,9 @@ int main() {
     window.draw(text);
 
     chest.setColor(sf::Color::Yellow);
+    if (worker_boxes >= 60) {
+      keep_making_boxes = false;
+    }
     for (int i = 0; i < worker_boxes; i++) {
       float x = 50.0f * (1.0f + i % 6);
       float y = 50.0f * (1.0f + i / 6);
@@ -221,10 +241,6 @@ int main() {
       chest.setPosition(x, y);
       window.draw(chest);
     }
-    if (worker_boxes >= 60) {
-      keep_making_boxes = false;
-    }
-
     window.display();
     //////////////////////////////////////////////////////////////////////////////////////
   }
@@ -238,7 +254,9 @@ int main() {
   /// now wait for the worker thread
   /// what if it did not terminate? Be safe.
   keep_making_boxes = false;
-  worker.join();
+  if (worker.joinable()) {
+    worker.join();
+  }
 
   std::cout << "All the threads are joined" << std::endl;
 
