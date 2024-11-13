@@ -103,17 +103,12 @@ std::mutex worker_mutex;
 
 void simple_task(int thread_id, int increments) {
   for (int i = 0; i < increments; ++i) {
-    /// the counter is declared atomic and does not need a mutex
-    ++shared_counter;
-    /// But the output stream is much more complex and must be
-    /// protected with a mutex. Although the scope of variables in a for loop
-    /// ends on EVERY iteration so the lock would be released automatically
-    /// each time around the loop, we release it immediately so that the
-    /// output stream is locked for the shortest possible time. Like the
-    /// for loop body, a block scope mutex is automatically released when
-    /// it goes out of scope
+    /// The scope of variables in a for loop ends on EVERY iteration so
+    /// the lock will be released automatically each time around the loop
+    /// even so we use a block scope to release it before sleeping.
     {
       std::lock_guard<std::mutex> lock(counter_mutex);
+      ++shared_counter;
       std::cout << "Thread " << thread_id << " incremented counter to " << shared_counter << std::endl;
     }
     std::this_thread::sleep_for(std::chrono::milliseconds(666));
@@ -128,7 +123,7 @@ void simple_task(int thread_id, int increments) {
 std::atomic<bool> keep_making_boxes(true);
 void endless_task() {
   while (keep_making_boxes) {
-    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
     worker_boxes++;
   }
   std::lock_guard<std::mutex> lock(worker_mutex);
@@ -150,7 +145,7 @@ int main() {
   sf::Sprite chest(texture);
 
   sf::Font dm_font;
-  if (!dm_font.loadFromFile("./assets/fonts/GortonDigital.otf")) {
+  if (!dm_font.loadFromFile("./assets/fonts/national-park.otf")) {
     exit(1);
   }
 
@@ -166,8 +161,8 @@ int main() {
    * They do not run sequentially
    **/
   std::cout << "Start the simple threads " << std::endl;
-  const int num_threads = 4;  /// Number of threads
-  const int increments = 5;   /// Number of increments per thread
+  const int num_threads = 10;  /// Number of threads
+  const int increments = 6;    /// Number of increments per thread
   std::vector<std::thread> threads;
   threads.reserve(num_threads);
   for (int i = 0; i < num_threads; ++i) {
@@ -204,17 +199,30 @@ int main() {
     sprintf(buf, "BOXES: %3d", (int)worker_boxes);
     text.setString(buf);
     text.setPosition(50, 5);
+    text.setFillColor(sf::Color(140, 91, 54));
     window.draw(text);
     sprintf(buf, "Shared Counter: %3d", (int)shared_counter);
     text.setString(buf);
     text.setPosition(350, 5);
+    text.setFillColor(sf::Color(0, 96, 0));
     window.draw(text);
 
+    chest.setColor(sf::Color::Yellow);
     for (int i = 0; i < worker_boxes; i++) {
-      float x = 50.0f * (1.0f + i % 10);
-      float y = 50.0f * (1.0f + i / 10);
+      float x = 50.0f * (1.0f + i % 6);
+      float y = 50.0f * (1.0f + i / 6);
       chest.setPosition(x, y);
       window.draw(chest);
+    }
+    chest.setColor(sf::Color::Green);
+    for (int i = 0; i < shared_counter; i++) {
+      float x = 50.0f * (1.0f + i % 6) + 300;
+      float y = 50.0f * (1.0f + i / 6);
+      chest.setPosition(x, y);
+      window.draw(chest);
+    }
+    if (worker_boxes >= 60) {
+      keep_making_boxes = false;
     }
 
     window.display();
@@ -227,14 +235,12 @@ int main() {
     th.join();
   }
 
-  /// now terminate the worker thread
+  /// now wait for the worker thread
+  /// what if it did not terminate? Be safe.
   keep_making_boxes = false;
   worker.join();
 
   std::cout << "All the threads are joined" << std::endl;
-
-  /// Display final counter value
-  std::cout << "Final counter value: " << shared_counter << std::endl;
 
   return 0;
 }
