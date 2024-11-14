@@ -70,7 +70,12 @@ void producer() {
 // Consumer thread function processes all the items in the queue
 void consumer() {
   while (true) {
-    std::this_thread::sleep_for(std::chrono::milliseconds(2000));  // Simulate processing time
+    for (int i = 0; i < 10; i++) {
+      std::this_thread::sleep_for(std::chrono::milliseconds(200));  // Simulate processing time
+      if (finished) {
+        break;
+      }
+    }
     std::lock_guard lock(queue_mutex);
     // Process all available messages
     while (!log_queue.empty()) {
