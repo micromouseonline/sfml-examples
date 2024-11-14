@@ -34,6 +34,7 @@
 std::queue<std::string> log_queue;   // Shared queue for log messages
 std::mutex queue_mutex;              // Mutex to protect the queue
 std::atomic<bool> finished = false;  // Signal for producer shutdown
+std::mutex cout_mutex;               // Mutex to protect the iostream
 
 std::condition_variable production_control;
 std::atomic<bool> producing = false;  // Signal for producer shutdown
@@ -57,6 +58,7 @@ void producer() {
       std::lock_guard lock(queue_mutex);
       log_queue.push(message);
     }
+    std::lock_guard<std::mutex> cout_lock(cout_mutex);
     std::cout << "Produced: " << message << std::endl;
   }
 
@@ -74,6 +76,7 @@ void consumer() {
     while (!log_queue.empty()) {
       std::string message = log_queue.front();
       log_queue.pop();
+      std::lock_guard cout_lock(cout_mutex);
       std::cout << "          Consumed: " << message << std::endl;
     }
     if (finished && log_queue.empty()) {
@@ -179,7 +182,7 @@ int main() {
   /// wait for the threads to terminate before we continue
   producer_thread.join();
   consumer_thread.join();
-
+  // no need to lock - all the threads are done;
   std::cout << "All the threads are joined" << std::endl;
 
   return 0;
