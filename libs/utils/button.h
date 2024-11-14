@@ -21,21 +21,30 @@ class Button {
     normalColor = sf::Color(0, 88, 0);
     hoverColor = sf::Color(0, 68, 0);
     pressedColor = sf::Color(0, 98, 0);
+    rect.setOrigin(rect.getSize().x / 2, rect.getSize().y / 2);
     rect.setPosition(x, y);
     rect.setOutlineThickness(2.0);
     rect.setOutlineColor(normalColor + sf::Color(40, 40, 40));
     rect.setFillColor(normalColor);
     label.setFont(font);
-    label.setString(text);
     label.setCharacterSize(20);
-    float h = label.getGlobalBounds().height;
     label.setFillColor(sf::Color::White);
-    label.setPosition(x + (width - label.getGlobalBounds().width) / 2, y + height / 2 - h + 2);
+    set_text(text);
   }
 
   void draw(sf::RenderWindow& window) {
     window.draw(rect);
     window.draw(label);
+  }
+
+  void set_text(const sf::String& text) {
+    label.setString(text);
+    float x = rect.getPosition().x;
+    float y = rect.getPosition().y;
+
+    float h = label.getGlobalBounds().height;
+    float w = label.getGlobalBounds().width;
+    label.setPosition(x - w / 2, y - h / 2 - 5);
   }
 
   ButtonEvent handleEvent(const sf::Event& event, const sf::RenderWindow& window) {
