@@ -62,10 +62,7 @@ void producer() {
 
   // Signal that production is finished so the consumer knows to exit
   // when the queue is empty
-  {
-    std::lock_guard lock(queue_mutex);
-    finished = true;
-  }
+  finished = true;
 }
 
 // Consumer thread function processes all the items in the queue
@@ -83,6 +80,11 @@ void consumer() {
       break;
     }
   }
+}
+
+size_t get_queue_size() {
+  std::lock_guard lock(queue_mutex);
+  return log_queue.size();
 }
 
 int main() {
@@ -107,6 +109,11 @@ int main() {
   sf::Sprite chest(props);
   chest.setTextureRect(sf::IntRect(8 * 160, 6 * 160, 160, 160));
   chest.setScale(1.0, 1.0);
+
+  sf::Text text;
+  text.setFont(font);
+  text.setCharacterSize(24);
+  text.setFillColor(sf::Color(255, 255, 0, 64));
 
   float w = 80;
   float h = 24;
@@ -147,14 +154,20 @@ int main() {
 
     ////  DISPLAY   //////////////////////////////////////////////////////////////////////
     window.clear();
-    {
-      std::lock_guard lock(queue_mutex);
-      for (int i = 0; i < log_queue.size(); i++) {
-        chest.setPosition(static_cast<float>(i) * 40.0f, 50.0f);
-        window.draw(chest);
-      }
+    // draw a picture to show the queue size
+    text.setString("Queued Items:");
+    text.setPosition(64.0f, 78.0f);
+    window.draw(text);
+    for (size_t i = 0; i < get_queue_size(); i++) {
+      chest.setPosition(static_cast<float>(i) * 40.0f, 50.0f);
+      window.draw(chest);
+      text.setString(std::to_string(i));
+      text.setPosition(static_cast<float>(i) * 40.0f + 72, 135.0f);
+      window.draw(text);
     }
+
     start_button.draw(window);
+
     window.display();
     //////////////////////////////////////////////////////////////////////////////////////
     ///
