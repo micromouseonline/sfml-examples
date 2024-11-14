@@ -146,7 +146,14 @@ int main() {
   if (!texture.loadFromFile("./assets/images/wooden-chest-45x40.png")) {
     exit(1);
   }
-  sf::Sprite chest(texture);
+  sf::Texture props;
+  if (!props.loadFromFile("./assets/images/props-1x1.png")) {
+    exit(1);
+  }
+
+  sf::Sprite chest(props);
+  chest.setTextureRect(sf::IntRect(5 * 160, 6 * 160, 160, 160));
+  chest.setScale(0.5, 0.5);
 
   sf::Font font;
   if (!font.loadFromFile("./assets/fonts/national-park.otf")) {
@@ -175,6 +182,10 @@ int main() {
   threads.reserve(num_threads);
   std::thread worker;
 
+  int type[100];
+  for (int i = 0; i < 100; i++) {
+    type[i] = rand() % 7 + 2;
+  }
   /// now we can do the main loop
   while (window.isOpen()) {
     ////  EVENTS    //////////////////////////////////////////////////////////////////////
@@ -232,6 +243,7 @@ int main() {
       float x = 50.0f * (1.0f + i % 6);
       float y = 50.0f * (1.0f + i / 6);
       chest.setPosition(x, y);
+      chest.setTextureRect(sf::IntRect(type[i] * 160, 6 * 160, 160, 160));
       window.draw(chest);
     }
     chest.setColor(sf::Color::Green);
@@ -239,6 +251,7 @@ int main() {
       float x = 50.0f * (1.0f + i % 6) + 300;
       float y = 50.0f * (1.0f + i / 6);
       chest.setPosition(x, y);
+      chest.setTextureRect(sf::IntRect(type[i] * 160, 6 * 160, 160, 160));
       window.draw(chest);
     }
     window.display();
