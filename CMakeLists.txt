@@ -111,6 +111,7 @@ add_subdirectory(src/201-imgui-basic)
 add_subdirectory(src/301-implot-demo)
 add_subdirectory(src/302-implot-with-imgui)
 add_subdirectory(src/400-simple-threads)
+add_subdirectory(src/404-threads-producer-consumer)
 add_subdirectory(src/501a-noc-vectors)
 add_subdirectory(src/501b-noc-behaviours)
 
