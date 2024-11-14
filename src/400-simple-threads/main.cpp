@@ -102,11 +102,21 @@ std::mutex counter_mutex;
 std::atomic<int> worker_boxes(0);
 std::mutex worker_mutex;
 
+/// We can use a single global flag to kill any threads that are still
+/// running when we exit the application
+std::atomic<bool> stop_all_threads(false);
+
 void simple_task(int thread_id, int increments) {
   for (int i = 0; i < increments; ++i) {
+    if (stop_all_threads) {
+      return;
+    }
     /// The scope of variables in a for loop ends on EVERY iteration so
     /// the lock will be released automatically each time around the loop
     /// even so we use a block scope to release it before sleeping.
+    /// std::lock_guard>std::mutex> automatically locks te mutex on creation
+    /// and unlocks it on destruction. It is more reliable than manually
+    /// locking/unlocking because you ar eless likely to forget or mess it up/
     {
       std::lock_guard<std::mutex> lock(counter_mutex);
       ++shared_counter;
@@ -127,9 +137,13 @@ void endless_task() {
     if (!keep_making_boxes) {
       break;
     }
+    if (stop_all_threads) {
+      break;
+    }
     worker_boxes++;
     std::this_thread::sleep_for(std::chrono::milliseconds(150));
   }
+
   std::lock_guard<std::mutex> lock(worker_mutex);
   std::cout << "Worker finished after " << worker_boxes << " boxes." << std::endl;
 }
@@ -192,6 +206,7 @@ int main() {
     sf::Event event{};
     while (window.pollEvent(event)) {
       if (event.type == sf::Event::Closed) {
+        stop_all_threads = true;
         window.close();
       }
       if (event.type == sf::Event::KeyPressed) {
@@ -235,7 +250,7 @@ int main() {
     text.setFillColor(sf::Color(0, 96, 0));
     window.draw(text);
 
-    chest.setColor(sf::Color::Yellow);
+    chest.setColor(sf::Color::White);  // actually the natural colour
     if (worker_boxes >= 60) {
       keep_making_boxes = false;
     }
