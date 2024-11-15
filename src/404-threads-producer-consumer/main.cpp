@@ -6,7 +6,6 @@
 #include <thread>
 #include <vector>
 #include "SFML/Graphics.hpp"
-#include "SFML/System/Clock.hpp"
 #include "SFML/Window/Event.hpp"
 #include "button.h"
 
@@ -95,6 +94,8 @@ std::mutex cout_mutex;               // Mutex to protect the iostream
 std::condition_variable production_control;
 std::atomic<bool> producing = false;  // Signal for producer shutdown
 
+sf::Clock timer;
+
 // Producer thread function
 void producer() {
   int i = 0;
@@ -111,8 +112,8 @@ void producer() {
     }
 
     /// simulate work at semi-random intervals
-    std::this_thread::sleep_for(std::chrono::milliseconds(100 + rand() % 500));
-    std::string message = "Barrel " + std::to_string(i++);
+    std::this_thread::sleep_for(std::chrono::milliseconds(125 + rand() % 250));
+    std::string message = std::to_string(i++);
     {
       /// add the message to the queue safely
       std::lock_guard lock(queue_mutex);
@@ -141,6 +142,7 @@ void consumer() {
       std::lock_guard cout_lock(cout_mutex);
       std::cout << "          Consumed: " << message << std::endl;
     }
+    timer.restart();
     /// ensure the entire queue is always processed
     if (finished && log_queue.empty()) {
       break;
@@ -155,6 +157,13 @@ void consumer() {
 size_t get_queue_size() {
   std::lock_guard lock(queue_mutex);
   return log_queue.size();
+}
+
+sf::Text text;
+void draw_text(sf::RenderTarget& target, float x, float y, const char* str) {
+  text.setString(str);
+  text.setPosition(x, y);
+  target.draw(text);
 }
 
 int main() {
@@ -179,7 +188,6 @@ int main() {
   chest.setTextureRect(sf::IntRect(8 * 160, 6 * 160, 160, 160));
   chest.setScale(1.0, 1.0);
 
-  sf::Text text;
   text.setFont(font);
   text.setCharacterSize(24);
   text.setFillColor(sf::Color(255, 255, 0, 64));
@@ -221,9 +229,23 @@ int main() {
       }
     }
     ////  UPDATE    //////////////////////////////////////////////////////////////////////
+    float t;
+    {
+      std::lock_guard lock(queue_mutex);
+      if (!producing) {
+        timer.restart();
+      }
+      t = timer.getElapsedTime().asSeconds();
+    }
+    sf::RectangleShape bar({320 * t, 5});
+    bar.setFillColor(sf::Color(255, 255, 0, 64));
+    bar.setPosition(64.0f, 175.0f);
 
     ////  DISPLAY   //////////////////////////////////////////////////////////////////////
     window.clear();
+    window.draw(bar);
+    draw_text(window, 64.0f, 20.0f, "Items are added at random intervals");
+    draw_text(window, 64.0f, 50.0f, "Items are all removed every 2 seconds");
     // draw a picture to show the queue size
     size_t length = get_queue_size();
     text.setString("Queued Items: " + std::to_string(length));
