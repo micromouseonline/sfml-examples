@@ -51,8 +51,8 @@ void producer() {
       }
     }
 
-    std::this_thread::sleep_for(std::chrono::milliseconds(100 + rand() % 300));  // Simulate work
-    std::string message = "Log message " + std::to_string(i++);
+    std::this_thread::sleep_for(std::chrono::milliseconds(100 + rand() % 500));  // Simulate work
+    std::string message = "Barrel " + std::to_string(i++);
     // Lock the queue and push a new log message
     {
       std::lock_guard lock(queue_mutex);
@@ -99,7 +99,7 @@ int main() {
   std::srand(static_cast<unsigned int>(std::time(0)));  // Initialize random seed
   sf::ContextSettings settings;
   settings.antialiasingLevel = 8;  // the number of multisamplings to use. 4 is probably fine
-  sf::RenderWindow window{sf::VideoMode(800, 600), "Simple Threads Demo", sf::Style::Default, settings};
+  sf::RenderWindow window{sf::VideoMode(800, 600), "Producer-Consumer Demo", sf::Style::Default, settings};
 
   window.setFramerateLimit(60);
   window.setVerticalSyncEnabled(true);
