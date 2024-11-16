@@ -1,26 +1,27 @@
 cmake_minimum_required(VERSION 3.14)
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
 project("ImGui-SFML-Starter" LANGUAGES CXX)
 
 # Set project directories
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin/${CMAKE_BUILD_TYPE})
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/build/${CMAKE_GENERATOR_PLATFORM}/${CMAKE_BUILD_TYPE})
-option(BUILD_SHARED_LIBS "Build shared libraries" OFF)
+set(ASSETS_SOURCE_DIR "${CMAKE_SOURCE_DIR}/assets")
+set(ASSETS_DEST_DIR "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/assets")
 
-# default compiler options and warnings
+
+# ###############################################################
+# set up the compiler and linker options
+# static linking for easy installation
+option(BUILD_SHARED_LIBS "Build shared libraries" OFF)
 include(${CMAKE_SOURCE_DIR}/cmake/DefaultCompilerOptionsAndWarnings.cmake)
 include(${CMAKE_SOURCE_DIR}/cmake/print_compiler_info.cmake)
 
-macro(print_compiler_info)
-    message(STATUS "Compiler: ${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION}")
-endmacro()
-
-# Define the add_compiler_info function
-function(add_compiler_info target)
+# ###############################################################
+function(show_compiler_info target)
     add_custom_command(
             TARGET ${target} PRE_BUILD
             COMMAND ${CMAKE_COMMAND} -E echo "C++ Compiler ID: ${CMAKE_CXX_COMPILER_ID}"
@@ -28,62 +29,82 @@ function(add_compiler_info target)
     )
 endfunction()
 
-function(add_data_file_copy target)
+
+# ###############################################################
+# be sure to copy any assets into the binary directory
+function(copy_resources target)
     add_custom_command(
-            TARGET ${target} POST_BUILD
-            COMMENT "Copying data files to binary directory"
-            COMMAND ${CMAKE_COMMAND} -E make_directory ${DATA_DEST_DIR}
-            COMMAND ${CMAKE_COMMAND} -E copy_directory ${DATA_SOURCE_DIR} ${DATA_DEST_DIR}
-            DEPENDS ${DATA_SOURCE_DIR}
+            TARGET ${target}
+            COMMENT "Copy Resources directory"
+            COMMAND ${CMAKE_COMMAND} -E echo " Copy Assets -"
+            COMMAND ${CMAKE_COMMAND} -E echo "          from:  ${ASSETS_SOURCE_DIR}"
+            COMMAND ${CMAKE_COMMAND} -E echo "            to:  ${ASSETS_DEST_DIR}"
+            PRE_BUILD COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different ${ASSETS_SOURCE_DIR} ${ASSETS_DEST_DIR}
+            VERBATIM
     )
 endfunction()
 
-# static linking for easy installation
-option(BUILD_SHARED_LIBS "Build shared libraries" OFF)
+# ###############################################################
+# use this if needed for audio or other DLLs on windows platforms
+function(copy_windows_dlls target)
+    if (WIN32)
+        add_custom_command(
+                TARGET ${PROJECT_NAME}
+                COMMENT "Copy OpenAL DLL"
+                PRE_BUILD COMMAND ${CMAKE_COMMAND} -E copy ${SFML_SOURCE_DIR}/extlibs/bin/$<IF:$<EQUAL:${CMAKE_SIZEOF_VOID_P},8>,x64,x86>/openal32.dll $<TARGET_FILE_DIR:${PROJECT_NAME}>
+                VERBATIM)
+    endif ()
+endfunction()
 
+
+# ###############################################################
+# Enable Fetchcontent to grab dependencies at configuration
 include(FetchContent)
 
-# ###############################
+# ###############################################################
 FetchContent_Declare(SFML
+        # Main rendering library
         GIT_REPOSITORY https://github.com/SFML/SFML.git
         GIT_TAG 2.6.x)
 FetchContent_MakeAvailable(SFML)
 
-# ###############################
+# ###############################################################
 FetchContent_Declare(ImGui
+        # Immediate Mode GUI Library
         GIT_REPOSITORY https://github.com/ocornut/imgui
         GIT_TAG v1.89.9-docking)
 FetchContent_MakeAvailable(ImGui)
 FetchContent_GetProperties(ImGui SOURCE_DIR IMGUI_DIR)
 set(IMGUI_SFML_FIND_SFML OFF)
 
+# ###############################################################
 FetchContent_Declare(ImGui-SFML
+        # ImGui back end for SFML
         GIT_REPOSITORY https://github.com/SFML/imgui-sfml
         GIT_TAG 2.6.x)
 FetchContent_MakeAvailable(ImGui-SFML)
 
-# ###############################
-FetchContent_Declare(
-        fmt
+# ###############################################################
+FetchContent_Declare(fmt
+        # Enhanced formatting for IOSTREAM
         GIT_REPOSITORY https://github.com/fmtlib/fmt.git
         GIT_TAG 8.0.1 # You can specify the version you need
 )
 FetchContent_MakeAvailable(fmt)
 
-# ###############################
-set(SFML_LIBS sfml-graphics sfml-system sfml-window)
-set(IMGUI_LIBS ImGui-SFML::ImGui-SFML)
-include_directories(${imgui_SOURCE_DIR})
-include_directories(libs/implot)
-include_directories(libs/utils)
+# ###############################################################
 
+# Immediate Mode PLotting Library
 add_subdirectory(libs/implot)
 set(IMPLOT_LIBS PUBLIC implot)
 include_directories(libs/implot)
 
 set(SFML_LIBS PUBLIC sfml-graphics sfml-system sfml-window)
 set(IMGUI_LIBS PUBLIC ImGui-SFML::ImGui-SFML)
-set(CMAKE_CXX_EXTENSIONS OFF)
+
+include_directories(${imgui_SOURCE_DIR})
+include_directories(libs/implot)
+include_directories(libs/utils)
 
 add_subdirectory(src/001-basic-window-and-shapes)
 add_subdirectory(src/001c-frame-rates)
@@ -116,51 +137,9 @@ add_subdirectory(src/405-thread-pools)
 add_subdirectory(src/406-multi-threading-real-time-simulations)
 add_subdirectory(src/501a-noc-vectors)
 add_subdirectory(src/501b-noc-behaviours)
-
 add_subdirectory(src/601-top-down-car-race)
-
 add_subdirectory(src/708-tilemap)
 add_subdirectory(src/808-wallmap)
 
-# if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-# file(COPY ${CMAKE_SOURCE_DIR}/resources DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
-# elseif(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
-# file(COPY ${CMAKE_SOURCE_DIR}/resources DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${CMAKE_BUILD_TYPE})
-# endif()
 
-# if (WIN32)
-# add_custom_command(
-# TARGET ${PROJECT_NAME}
-# COMMENT "Copy OpenAL DLL"
-# PRE_BUILD COMMAND ${CMAKE_COMMAND} -E copy ${SFML_SOURCE_DIR}/extlibs/bin/$<IF:$<EQUAL:${CMAKE_SIZEOF_VOID_P},8>,x64,x86>/openal32.dll $<TARGET_FILE_DIR:${PROJECT_NAME}>
-# VERBATIM)
-# endif ()
 
-# ############################### be sure to copy any assets into the binary directory
-
-# Define the directory containing your asset files
-set(DATA_SOURCE_DIR ${CMAKE_SOURCE_DIR}/assets)
-set(ASSETS_SOURCE_DIR "${CMAKE_SOURCE_DIR}/assets")
-set(ASSETS_DEST_DIR "${CMAKE_BINARY_DIR}/assets")
-
-# Define the directory where you want to copy the data files
-set(DATA_DEST_DIR ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/assets)
-
-add_custom_target(show_compiler_info ALL
-        COMMAND ${CMAKE_COMMAND} -E echo "C++ Compiler path: ${CMAKE_CXX_COMPILER}"
-        COMMAND ${CMAKE_COMMAND} -E echo "C++ Compiler ID: ${CMAKE_CXX_COMPILER_ID}"
-        COMMAND ${CMAKE_COMMAND} -E echo "C++ Compiler Version: ${CMAKE_CXX_COMPILER_VERSION}"
-)
-
-# Copy data files after building the target
-add_custom_target(copy_data_files ALL
-        COMMENT "Copying data files to binary directory"
-        COMMAND ${CMAKE_COMMAND} -E make_directory ${DATA_DEST_DIR}
-        COMMAND ${CMAKE_COMMAND} -E copy_directory ${DATA_SOURCE_DIR} ${DATA_DEST_DIR}
-        DEPENDS ${DATA_SOURCE_DIR}
-)
-
-# Set a dependency on copy_data_files for each of your target executables
-foreach (TARGET_EXECUTABLE ${TARGET_EXECUTABLES})
-    add_dependencies(${TARGET_EXECUTABLE} copy_data_files)
-endforeach ()

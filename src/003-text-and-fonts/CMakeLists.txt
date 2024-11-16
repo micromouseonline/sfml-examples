@@ -9,6 +9,10 @@ target_sources(${APP} PRIVATE
 target_compile_options(${APP} PRIVATE
         ${DEFAULT_COMPILER_OPTIONS_AND_WARNINGS}
 )
+
+copy_resources(${APP})
+copy_windows_dlls(${APP})
+
 target_link_libraries(
         ${APP} PRIVATE
         ${SANITIZER_FLAGS}
