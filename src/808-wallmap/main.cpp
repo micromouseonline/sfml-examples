@@ -74,13 +74,17 @@ int main() {
   Robot robot(robot_width, robot_height);
   robot.setPosition(270, 90 + 12 * 180);
   RobotView robot_view(robot);
-  robot_view.load_texture("./assets/images/mouse-77x100.png");
+  if (!robot_view.load_texture("./assets/images/mouse-77x100.png")) {
+    std::cerr << "Unable to load texture\n";
+    exit(1);
+  };
 
   // create the tilemap from the level_map definition
   TileMap map;
   map.set_font(font);
   if (!map.load("assets/images/maze-tiles-180x180.png", sf::Vector2u(180, 180), japan2007, 16, 16)) {
-    return -1;
+    std::cerr << "Unable to load maze tiles\n";
+    exit(1);
   }
 
   /// Define the main regions for elements in the window
