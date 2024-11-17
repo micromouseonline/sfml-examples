@@ -26,7 +26,7 @@ float ui_title_height = ui_title_font_height + 5.0f;
 float window_width = map_view_size + sidebar_width + 3 * element_space;
 float window_height = map_view_size + 2 * element_space;
 
-int robot_width = 77;
+int robot_width = 76;
 int robot_height = 100;
 
 sf::Color DustyRed(217, 87, 99);
@@ -66,7 +66,7 @@ int main() {
   Robot robot(robot_width, robot_height);
   robot.setPosition(270, 90 + 12 * 180);
   RobotView robot_view(robot);
-  if (!robot_view.load_texture("./assets/images/mouse-77x100.png")) {
+  if (!robot_view.load_texture("./assets/images/mouse-76x100.png")) {
     std::cerr << "Unable to load texture\n";
     exit(1);
   };

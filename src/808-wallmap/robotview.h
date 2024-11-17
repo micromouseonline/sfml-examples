@@ -31,7 +31,7 @@ class RobotView : public sf::Sprite {
   }
 
   void update() {
-    setTextureRect(sf::IntRect(m_robot.m_state * m_robot.m_width, 0, m_robot.m_width, m_robot.m_height));
+    // setTextureRect(sf::IntRect(m_robot.m_state * m_robot.m_width, 0, m_robot.m_width, m_robot.m_height));
     setRotation(m_robot.m_angle);
     setPosition(m_robot.m_x, m_robot.m_y);
   }
