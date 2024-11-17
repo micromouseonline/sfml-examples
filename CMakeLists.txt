@@ -39,7 +39,9 @@ function(copy_resources target)
             COMMAND ${CMAKE_COMMAND} -E echo " Copy Assets -"
             COMMAND ${CMAKE_COMMAND} -E echo "          from:  ${ASSETS_SOURCE_DIR}"
             COMMAND ${CMAKE_COMMAND} -E echo "            to:  ${ASSETS_DEST_DIR}"
-            PRE_BUILD COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different ${ASSETS_SOURCE_DIR} ${ASSETS_DEST_DIR}
+            PRE_BUILD COMMAND ${CMAKE_COMMAND} -E copy_directory ${ASSETS_SOURCE_DIR} ${ASSETS_DEST_DIR}
+            # This second version is cmake >= 3.26 only
+            # PRE_BUILD COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different ${ASSETS_SOURCE_DIR} ${ASSETS_DEST_DIR}
             VERBATIM
     )
 endfunction()
