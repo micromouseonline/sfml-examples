@@ -3,6 +3,8 @@
 #include <SFML/Window/Event.hpp>
 #include <cmath>
 #include <iostream>
+#include <memory>
+
 #include "map.h"
 #include "maze_constants.h"
 #include "robot.h"
@@ -46,16 +48,6 @@ sf::FloatRect calculate_viewport(const sf::FloatRect& viewport_rect, const sf::F
 }
 
 int main() {
-  std::cout << wall_id(0, 0, DIR_N) << std::endl;
-  std::cout << wall_id(0, 0, DIR_E) << std::endl;
-  std::cout << wall_id(0, 0, DIR_S) << std::endl;
-  std::cout << wall_id(0, 0, DIR_W) << std::endl;
-
-  std::cout << wall_id(31, 31, DIR_N) << std::endl;
-  std::cout << wall_id(31, 31, DIR_E) << std::endl;
-  std::cout << wall_id(31, 31, DIR_S) << std::endl;
-  std::cout << wall_id(31, 31, DIR_W) << std::endl;
-
   /// Any antialiasing has to be set globally when creating the window:
   sf::ContextSettings settings;
   settings.antialiasingLevel = 8;  // the number of multisamplings to use. 4 is probably fine
@@ -80,9 +72,9 @@ int main() {
   };
 
   // create the tilemap from the level_map definition
-  TileMap map;
-  map.set_font(font);
-  if (!map.load("assets/images/maze-tiles-180x180.png", sf::Vector2u(180, 180), japan2007, 16, 16)) {
+  auto map = std::make_unique<TileMap>();
+  map->set_font(font);
+  if (!map->load("assets/images/maze-tiles-180x180.png", sf::Vector2u(180, 180), japan2007, 16, 16)) {
     std::cerr << "Unable to load maze tiles\n";
     exit(1);
   }
@@ -119,8 +111,8 @@ int main() {
   // Create a larger render texture
   // these are stored in the GPU and are fast
   // units are mm so 1 pixel/mm but it can be scaled at very little cost in the GPU
-  sf::RenderTexture renderTexture;
-  if (!renderTexture.create(16 * 180, 16 * 180)) {
+  auto renderTexture = std::make_unique<sf::RenderTexture>();
+  if (!renderTexture->create(16 * 180, 16 * 180)) {
     // Error handling
     return EXIT_FAILURE;
   }
@@ -202,21 +194,20 @@ int main() {
     /***
      * the map view
      */
-    float scale = map_view_size / renderTexture.getSize().x;
+    float scale = map_view_size / renderTexture->getSize().x;
     int cellSize = scale * 180;
     int cellx = worldPos.x / cellSize;
     int celly = 16 - worldPos.y / cellSize;
-    map.clear_colours();
-    map.set_cell_colour(cellx, celly, sf::Color::Green);
-
-    map.setScale(1, 1);
+    map->clear_colours();
+    map->set_cell_colour(cellx, celly, sf::Color::Green);
+    map->setScale(1, 1);
     robot_view.setScale(1, 1);
-    renderTexture.clear();
-    renderTexture.draw(map);
-    renderTexture.draw(robot_view);
-    renderTexture.display();
+    renderTexture->clear();
+    renderTexture->draw(*map);
+    renderTexture->draw(robot_view);
+    renderTexture->display();
     // now the render texture is drawn as a single sprite
-    sf::Sprite map_sprite(renderTexture.getTexture());
+    sf::Sprite map_sprite(renderTexture->getTexture());
     map_sprite.setScale(scale, scale);
     window.draw(map_sprite);
 
