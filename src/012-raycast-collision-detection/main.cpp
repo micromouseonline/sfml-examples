@@ -207,7 +207,7 @@ int main() {
   sf::Sprite mouse;
   mouse.setTexture(mouse_texture);
   sf::IntRect normal(0, 0, 76, 100);
-  sf::IntRect blocked(4 * 76, 0, 76, 100);
+  sf::IntRect blocked(5 * 76, 0, 76, 100);
   mouse.setTextureRect(normal);
   mouse.setOrigin(38, 60);
   mouse.setPosition(286, 466);
