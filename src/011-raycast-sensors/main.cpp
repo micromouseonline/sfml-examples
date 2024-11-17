@@ -86,12 +86,12 @@ int main() {
 
   /// and make a mouse sprite for more pretty
   sf::Texture mouse_texture;
-  mouse_texture.loadFromFile("./assets/images/mouse-77x100.png");
+  mouse_texture.loadFromFile("./assets/images/mouse-76x100.png");
 
   sf::Sprite robot;
   robot.setTexture(mouse_texture);
-  robot.setTextureRect(sf::IntRect{0, 0, 77, 100});
-  robot.setOrigin(39, 60);
+  robot.setTextureRect(sf::IntRect{0, 0, 76, 100});
+  robot.setOrigin(38, 62);
   robot.setPosition(106 + 2 * 180, 105 + 2 * 180);
   robot.setRotation(270);
 
@@ -111,8 +111,8 @@ int main() {
   sf::Sprite maze_map(map_texture.getTexture());
 
   sf::Vector2f lfs_offs = sf::Vector2f(-30, -40);
-  sf::Vector2f lds_offs = sf::Vector2f(-10, -55);
-  sf::Vector2f rds_offs = sf::Vector2f(+10, -55);
+  sf::Vector2f lds_offs = sf::Vector2f(-10, -50);
+  sf::Vector2f rds_offs = sf::Vector2f(+10, -50);
   sf::Vector2f rfs_offs = sf::Vector2f(+30, -40);
 
   float lfs_ang = -90 - 10;

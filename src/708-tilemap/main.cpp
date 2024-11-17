@@ -20,7 +20,7 @@ float ui_title_height = ui_title_font_height + 5.0f;
 float window_width = map_view_size + sidebar_width + 3 * element_space;
 float window_height = map_view_size + 2 * element_space;
 
-int robot_width = 77;
+int robot_width = 76;
 int robot_height = 100;
 
 sf::Color DustyRed(217, 87, 99);
@@ -58,15 +58,15 @@ int main() {
   }
 
   sf::Texture robot_sprite;
-  if (!robot_sprite.loadFromFile("./assets/images/mouse-77x100.png")) {
+  if (!robot_sprite.loadFromFile("./assets/images/mouse-76x100.png")) {
     std::cerr << "Unable to load texture\n";
     exit(1);
   }
 
   sf::Sprite robot;
   robot.setTexture(robot_sprite);
-  robot.setTextureRect(sf::IntRect(0, 0, 77, 100));
-  robot.setOrigin(38.5, 60);
+  robot.setTextureRect(sf::IntRect(0, 0, 76, 100));
+  robot.setOrigin(38, 62);
   robot.setPosition(270, 270);
   robot.setRotation(180.0);
   // robot.scale(0.5, 0.5);

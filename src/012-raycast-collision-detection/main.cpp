@@ -68,7 +68,7 @@ sf::Vector2f castRay(const sf::Image& image, sf::Color wall_colour, const sf::Ve
     }
 
     color = getColorAtPixel(image, x0, y0);
-    if (color == wall_colour) {
+    if (color == wall_colour || color.a == 0) {
       break;
     }
 
@@ -201,19 +201,19 @@ int main() {
   /// and make a mouse sprite for more pretty
   sf::Texture mouse_texture;
   sf::Image mouse_images;
-  mouse_images.loadFromFile("./assets/images/mouse-77x100.png");
+  mouse_images.loadFromFile("./assets/images/mouse-76x100.png");
   mouse_texture.loadFromImage(mouse_images);
 
   sf::Sprite mouse;
   mouse.setTexture(mouse_texture);
-  sf::IntRect normal(0, 0, 77, 100);
-  sf::IntRect blocked(4 * 77, 0, 77, 100);
+  sf::IntRect normal(0, 0, 76, 100);
+  sf::IntRect blocked(4 * 76, 0, 76, 100);
   mouse.setTextureRect(normal);
-  mouse.setOrigin(39, 60);
+  mouse.setOrigin(38, 60);
   mouse.setPosition(286, 466);
 
   /// lets create an image of one frame of the mouse
-  sf::IntRect r(0, 0, 77, 100);
+  sf::IntRect r(0, 0, 76, 100);
   sf::Image the_mouse;
   sf::Color bg(16, 16, 16, 0);
   the_mouse.create(r.width, r.height, bg);
@@ -225,7 +225,7 @@ int main() {
   /// That list can then be tested against the map image for collisions.
   /// Probably
 
-  create_collision_shield(the_mouse, 39, 60, 180);
+  create_collision_shield(the_mouse, 38, 62, 90);
   using ShieldPoints = std::vector<sf::Vector2f>;
   ShieldPoints collision_shield = base_shield_points;
 
@@ -321,6 +321,14 @@ int main() {
     /// takes about 1.2us per point
     collision_shield = base_shield_points;
     rotatePoints(collision_shield, angle);
+    for (auto& point : collision_shield) {
+      float r = 1;
+      sf::CircleShape circle(r);
+      circle.setOrigin(r, r);
+      circle.setFillColor(shield_colour);
+      circle.setPosition(mouse.getPosition() + point);
+      window.draw(circle);
+    }
 
     int phase3 = clock.restart().asMicroseconds();
 
