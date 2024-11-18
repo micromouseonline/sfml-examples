@@ -3,6 +3,7 @@
 #include <cmath>
 #include <iostream>
 #include <string>
+#include "collisions.h"
 #include "expfilter.h"
 #include "object.h"
 #include "robot.h"
@@ -49,109 +50,6 @@ void draw_point(sf::RenderTarget& target, Vec2 p, sf::Color color = sf::Color::R
   circle.setPosition(p.x, p.y);
   circle.setOrigin(r, r);
   target.draw(circle);
-}
-
-bool isCircleOverlappingRectangle(const sf::RectangleShape& rect, const sf::CircleShape& circle) {
-  // Find the closest point to the circle within the rectangle
-  float closestX = std::clamp(circle.getPosition().x, rect.getPosition().x, rect.getPosition().x + rect.getSize().x);
-  float closestY = std::clamp(circle.getPosition().y, rect.getPosition().y, rect.getPosition().y + rect.getSize().y);
-  // Calculate the distance between the circle's center and this closest point
-  float distanceX = circle.getPosition().x - closestX;
-  float distanceY = circle.getPosition().y - closestY;  // Calculate the distance squared and compare with the radius squared
-  float distanceSquared = (distanceX * distanceX) + (distanceY * distanceY);
-  return distanceSquared < (circle.getRadius() * circle.getRadius());
-}
-
-/////////////////////////////////////////////////////////////////////
-
-// Function to project rectangle onto an axis
-std::pair<float, float> projectRectangle(const sf::RectangleShape& rect, const sf::Vector2f& axis) {
-  std::vector<sf::Vector2f> points(4);
-  for (size_t i = 0; i < 4; ++i) {
-    points[i] = rect.getTransform().transformPoint(rect.getPoint(i));
-  }
-  float min = (points[0].x * axis.x + points[0].y * axis.y);
-  float max = min;
-  for (size_t i = 1; i < 4; ++i) {
-    float projection = (points[i].x * axis.x + points[i].y * axis.y);
-    if (projection < min)
-      min = projection;
-    if (projection > max)
-      max = projection;
-  }
-  return std::make_pair(min, max);
-}
-
-// Function to check for separating axis
-bool isSeparatingAxis(const sf::RectangleShape& rect1, const sf::RectangleShape& rect2, const sf::Vector2f& axis) {
-  auto projection1 = projectRectangle(rect1, axis);
-  auto projection2 = projectRectangle(rect2, axis);
-
-  return (projection1.second < projection2.first || projection2.second < projection1.first);
-}
-
-// Function to check for overlap
-bool isOverlapping(const sf::RectangleShape& rect1, const sf::RectangleShape& rect2) {
-  std::vector<sf::Vector2f> axes = {rect1.getTransform().transformPoint(rect1.getPoint(1)) - rect1.getTransform().transformPoint(rect1.getPoint(0)),
-                                    rect1.getTransform().transformPoint(rect1.getPoint(3)) - rect1.getTransform().transformPoint(rect1.getPoint(0)),
-                                    rect2.getTransform().transformPoint(rect2.getPoint(1)) - rect2.getTransform().transformPoint(rect2.getPoint(0)),
-                                    rect2.getTransform().transformPoint(rect2.getPoint(3)) - rect2.getTransform().transformPoint(rect2.getPoint(0))};
-
-  for (auto& axis : axes) {
-    if (isSeparatingAxis(rect1, rect2, sf::Vector2f(-axis.y, axis.x))) {
-      return false;  // There is a separating axis, so they do not overlap
-    }
-  }
-  return true;  // No separating axis found, so they overlap
-}
-
-/////////////////////////////////////////////////////////////////////
-
-// Function to project a point onto an axis
-float projectPoint(const sf::Vector2f& point, const sf::Vector2f& axis) {
-  return (point.x * axis.x + point.y * axis.y);
-}
-
-// Function to get the closest point on the rectangle to the circle center
-sf::Vector2f getClosestPointOnRectangle(const sf::RectangleShape& rect, const sf::Vector2f& circleCenter) {
-  sf::Vector2f closestPoint = circleCenter;
-  std::vector<sf::Vector2f> vertices(4);
-  for (size_t i = 0; i < 4; ++i) {
-    vertices[i] = rect.getTransform().transformPoint(rect.getPoint(i));
-  }
-
-  for (const auto& axis : {sf::Vector2f(1, 0), sf::Vector2f(0, 1)}) {
-    float minDistance = std::numeric_limits<float>::max();
-    for (const auto& vertex : vertices) {
-      float distance = std::abs(projectPoint(vertex - circleCenter, axis));
-      if (distance < minDistance) {
-        minDistance = distance;
-        if (axis.x == 1) {
-          closestPoint.x = vertex.x;
-        } else {
-          closestPoint.y = vertex.y;
-        }
-      }
-    }
-  }
-  return closestPoint;
-}
-
-// Function to check for overlap
-bool isCircleOverlappingRotatedRectangle(const sf::CircleShape& circle, const sf::RectangleShape& rect) {
-  // Get circle properties
-  sf::Vector2f circleCenter = circle.getPosition() + sf::Vector2f(circle.getRadius(), circle.getRadius());
-  float circleRadius = circle.getRadius();
-
-  // Get the closest point on the rectangle to the circle center
-  sf::Vector2f closestPoint = getClosestPointOnRectangle(rect, circleCenter);
-
-  // Calculate the distance between the closest point and the circle center
-  float distanceX = circleCenter.x - closestPoint.x;
-  float distanceY = circleCenter.y - closestPoint.y;
-  float distanceSquared = (distanceX * distanceX) + (distanceY * distanceY);
-
-  return distanceSquared < (circleRadius * circleRadius);
 }
 
 /////////////////////////////////////////////////////////////////////
@@ -211,7 +109,7 @@ void create_obstacles(sf::RenderTarget& target) {
 
 std::vector<sf::RectangleShape> rectangles;
 void make_rectangles() {
-  for (int i = 0; i < 100; ++i) {
+  for (int i = 0; i < 10; ++i) {
     sf::RectangleShape rect(sf::Vector2f(20.f, 20.f));
 
     // Randomly position the rectangle within the window bounds
@@ -255,11 +153,10 @@ int main() {
   rect.setFillColor(sf::Color::Green);
   rect.setPosition(700, 200);
 
-  sf::RectangleShape rect2(sf::Vector2f(100, 100));
-
-  rect2.setFillColor(sf::Color::Green);
-  rect2.setOrigin(50, 50);
-  rect2.setPosition(200, 200);
+  sf::RectangleShape object_rect(sf::Vector2f(20, 20));
+  object_rect.setOrigin(10, 10);
+  object_rect.setFillColor(sf::Color::Green);
+  object_rect.setPosition(200, 200);
 
   ComplexObject object(sf::Vector2f(0, 0));
   auto body = std::make_unique<sf::RectangleShape>(sf::Vector2f(76, 62));
@@ -282,10 +179,6 @@ int main() {
   circle2.setOrigin(3, 3);
   circle2.setFillColor(sf::Color::Red);
   circle2.setPosition(400, 200);
-  //  sf::CircleShape circle3(30);
-  //  circle3.setFillColor(sf::Color::Cyan);
-  //  circle3.setOrigin(30, 90);
-  //  circle3.setPosition(400, 200);
 
   make_rectangles();
 
@@ -320,26 +213,25 @@ int main() {
     Vec2 mouse(mouse_pos.x, mouse_pos.y);
     float d = getDistance(p, mouse);
     float md = minimum_distance(a, b, mouse);
-    rect2.setPosition(mouse.x, mouse.y);
-    rect2.rotate(d_theta);
+    object_rect.setPosition(mouse.x, mouse.y);
+    object_rect.rotate(d_theta);
     int phase1 = clock.restart().asMicroseconds();
-    bool hit = isOverlapping(rect, rect2);
 
     object.setPosition(mouse.x, mouse.y);
     circle2.setPosition(object.getPosition());
     object.rotate(d_theta);
 
-    if (isOverlapping(rect, rect2)) {
+    if (object.collides_with(rect)) {
       rect.setFillColor(sf::Color::Red);
-      rect2.setFillColor(sf::Color::Red);
+      object_rect.setFillColor(sf::Color::Red);
     } else {
       rect.setFillColor(sf::Color::Green);
-      rect2.setFillColor(sf::Color::Blue);
+      object_rect.setFillColor(sf::Color::Blue);
     }
-    rect2.setFillColor(sf::Color::Blue);
+    object_rect.setFillColor(sf::Color::Blue);
     for (const auto& rect : rectangles) {
-      if (isOverlapping(rect, rect2)) {
-        rect2.setFillColor(sf::Color::Red);
+      if (object.collides_with(rect)) {
+        object_rect.setFillColor(sf::Color::Red);
       }
     }
     int phase2 = clock.restart().asMicroseconds();
@@ -354,11 +246,9 @@ int main() {
     draw_point(window, p);
     draw_point(window, mouse);
     window.draw(rect);
-    window.draw(rect2);
+    window.draw(object_rect);
     object.draw(window);
     window.draw(circle2);
-    //    window.draw(circle2);
-    //    window.draw(circle3);
     /////////////////////////////////////////////////////////
 
     int phase3 = clock.restart().asMicroseconds();
@@ -368,9 +258,12 @@ int main() {
     string += "p to mouse: " + std::to_string(md) + " us\n";
     string += "get mouse pos: " + std::to_string(phase2) + " us\n";
     string += "  draw shield: " + std::to_string(phase3) + " us\n";
+    string += "    mouse pos: " + std::to_string((int)mouse_pos.x) + "," + std::to_string((int)mouse_pos.y) + " us\n";
+    string += "   circle pos: " + std::to_string((int)object.circle_centre().x) + "," + std::to_string((int)object.circle_centre().y) + " us\n";
+    string += "circle origin: " + std::to_string((int)object.circle_origin().x) + "," + std::to_string((int)object.circle_origin().y) + " us\n";
     int total = phase1 + phase2 + phase3;
     text.setString(string);
-    text.setPosition(900, 50);
+    text.setPosition(600, 50);
     window.draw(text);
     // Display the window
     window.display();
