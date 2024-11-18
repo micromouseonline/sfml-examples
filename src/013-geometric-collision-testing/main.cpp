@@ -159,19 +159,20 @@ int main() {
   object_rect.setPosition(200, 200);
 
   ComplexObject object(sf::Vector2f(0, 0));
+
   auto body = std::make_unique<sf::RectangleShape>(sf::Vector2f(76, 62));
   body->setFillColor(sf::Color::Transparent);
   body->setOutlineColor(sf::Color::Magenta);
   body->setOutlineThickness(2);
-  body->setOrigin(38, 38);
+  body->setOrigin(38, 31);
   object.addShape(std::move(body), sf::Vector2f(0, 0));
 
   auto head = std::make_unique<sf::CircleShape>(38);
-  head->setOrigin(38, 76);
+  head->setOrigin(38, 38);
   head->setFillColor(sf::Color::Transparent);
   head->setOutlineColor(sf::Color::Yellow);
   head->setOutlineThickness(2);
-  object.addShape(std::move(head), sf::Vector2f(0, 0));
+  object.addShape(std::move(head), sf::Vector2f(0, -38));
 
   object.setPosition(sf::Vector2f(400, 200));
 
@@ -199,10 +200,10 @@ int main() {
       }
     }
     if (window.hasFocus()) {
-      if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left)) {
+      if (sf::Keyboard::isKeyPressed(sf::Keyboard::A)) {
         d_theta = -omega * dt;
       }
-      if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right)) {
+      if (sf::Keyboard::isKeyPressed(sf::Keyboard::D)) {
         d_theta = omega * dt;
       }
     }
@@ -218,8 +219,8 @@ int main() {
     int phase1 = clock.restart().asMicroseconds();
 
     object.setPosition(mouse.x, mouse.y);
-    circle2.setPosition(object.getPosition());
     object.rotate(d_theta);
+    circle2.setPosition(object.getPosition());
 
     if (object.collides_with(rect)) {
       rect.setFillColor(sf::Color::Red);
@@ -259,8 +260,9 @@ int main() {
     string += "get mouse pos: " + std::to_string(phase2) + " us\n";
     string += "  draw shield: " + std::to_string(phase3) + " us\n";
     string += "    mouse pos: " + std::to_string((int)mouse_pos.x) + "," + std::to_string((int)mouse_pos.y) + " us\n";
-    string += "   circle pos: " + std::to_string((int)object.circle_centre().x) + "," + std::to_string((int)object.circle_centre().y) + " us\n";
-    string += "circle origin: " + std::to_string((int)object.circle_origin().x) + "," + std::to_string((int)object.circle_origin().y) + " us\n";
+    //    string += "   circle pos: " + std::to_string((int)object.circle_centre().x) + "," + std::to_string((int)object.circle_centre().y) + " us\n";
+    //    string += "circle origin: " + std::to_string((int)object.circle_origin().x) + "," + std::to_string((int)object.circle_origin().y) + " us\n";
+    // string += " circle angle: " + std::to_string((int)object..circle_origin().x) + "," + std::to_string((int)object.circle_origin().y) + " us\n";
     int total = phase1 + phase2 + phase3;
     text.setString(string);
     text.setPosition(600, 50);

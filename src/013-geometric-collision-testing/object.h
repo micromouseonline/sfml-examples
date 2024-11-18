@@ -3,70 +3,73 @@
 
 #include <SFML/Graphics.hpp>
 #include <cmath>
+#include <memory>
+#include <vector>
 #include "collisions.h"
 
 class ComplexObject {
  public:
   ComplexObject(const sf::Vector2f& center) : m_center(center) {}
 
-  // Add a shape to the object
-  void addShape(std::unique_ptr<sf::Shape> shape, const sf::Vector2f& offset) { shapes.push_back(std::move(shape)); }
-
-  void setPosition(float x, float y) { setPosition(sf::Vector2f(x, y)); }
-  void setPosition(const sf::Vector2f& position) {
-    m_center = position;
-    for (auto& shape : shapes) {
-      shape->setPosition(m_center);
-    }
+  void addShape(std::unique_ptr<sf::Shape> shape, const sf::Vector2f& offset) {
+    shape->setPosition(m_center + offset);
+    shapes.emplace_back(std::move(shape), offset);
   }
-  sf::Vector2f getPosition() { return m_center; }
 
   void rotate(float angle) {
-    /// Each shape has its origin set to the relative center of the object
-    for (auto& shape : shapes) {
+    // Convert angle from degrees to radians
+    float radAngle = angle * (3.14159265359f / 180.f);
+    float cosAngle = std::cos(radAngle);
+    float sinAngle = std::sin(radAngle);
+
+    for (auto& shapePair : shapes) {
+      auto& shape = shapePair.first;
+      auto& initialOffset = shapePair.second;
+
+      // Step 1: Rotate the offset vector around m_center
+      sf::Vector2f rotatedOffset;
+      rotatedOffset.x = initialOffset.x * cosAngle - initialOffset.y * sinAngle;
+      rotatedOffset.y = initialOffset.x * sinAngle + initialOffset.y * cosAngle;
+
+      // Step 2: Set the position of the shape relative to m_center
+      initialOffset = rotatedOffset;
+      shape->setPosition(m_center + rotatedOffset);
+
+      // Step 3: Rotate the shape around its own local origin
       shape->setRotation(shape->getRotation() + angle);
     }
   }
 
-  // Draw all shapes
+  void setPosition(float x, float y) { setPosition(sf::Vector2f(x, y)); }
+
+  void setPosition(const sf::Vector2f& position) { m_center = position; }
+
+  sf::Vector2f getPosition() const { return m_center; }
+
   void draw(sf::RenderWindow& window) {
-    for (const auto& shape : shapes) {
-      window.draw(*shape);
+    for (const auto& shapePair : shapes) {
+      window.draw(*shapePair.first);
     }
   }
 
-  sf::Vector2f circle_centre() { return cpos; }
-  sf::Vector2f circle_origin() { return corigin; }
-
   bool collides_with(const sf::RectangleShape& rect) {
-    for (const auto& shape : shapes) {
-      if (sf::CircleShape* circle = dynamic_cast<sf::CircleShape*>(shape.get())) {
-        cx = circle->getPosition().x;
-        cy = circle->getPosition().y;
-        cpos = circle->getPosition() - sf::Vector2f(0, circle->getRadius());
-        corigin = circle->getOrigin();
-        auto test_circle = sf::CircleShape(*circle);
-        test_circle.move({0, -circle->getOrigin().y - circle->getRadius()});
-        cpos = test_circle.getPosition();
-        if (isCircleOverlappingRectangle(rect, test_circle)) {
+    for (const auto& shapePair : shapes) {
+      auto& shape = *shapePair.first;
+      if (auto* circle = dynamic_cast<sf::CircleShape*>(&shape)) {
+        if (isCircleOverlappingRectangle(rect, *circle))
           return true;
-        }
-      } else if (auto this_rect = dynamic_cast<sf::RectangleShape*>(shape.get())) {
-        if (isOverlapping(rect, *this_rect)) {
-          //          return true;
-        }
+      } else if (auto* this_rect = dynamic_cast<sf::RectangleShape*>(&shape)) {
+        if (isOverlapping(rect, *this_rect))
+          return true;
       }
     }
     return false;
   }
 
  private:
-  float cx;
-  float cy;
-  sf::Vector2f cpos;
-  sf::Vector2f corigin;
   sf::Vector2f m_center;
-  std::vector<std::unique_ptr<sf::Shape>> shapes;
+  std::vector<std::pair<std::unique_ptr<sf::Shape>, sf::Vector2f>> shapes;
+  std::vector<std::pair<std::unique_ptr<sf::Shape>, sf::Vector2f>> originalOffsets;
 };
 
 #endif  // _OBJECT_H
