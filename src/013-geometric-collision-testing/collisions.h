@@ -8,8 +8,8 @@
 bool isCircleOverlappingRectangle(const sf::RectangleShape& rect, const sf::CircleShape& circle) {
   // Adjust for the circle's origin offset
   sf::Vector2f circleCenter;
-  circleCenter.x = circle.getPosition().x;                         //+ circle.getOrigin().x;
-  circleCenter.y = circle.getPosition().y + circle.getOrigin().y;  // circleCenter = circle.getPosition()   - circle.getOrigin();
+  circleCenter.x = circle.getPosition().x;  //+ circle.getOrigin().x;
+  circleCenter.y = circle.getPosition().y;  // circleCenter = circle.getPosition()   - circle.getOrigin();
 
   // Find the closest point to the circle within the rectangle
   float closestX = std::clamp(circleCenter.x, rect.getPosition().x, rect.getPosition().x + rect.getSize().x);

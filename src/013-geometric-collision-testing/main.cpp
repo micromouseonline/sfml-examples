@@ -108,9 +108,10 @@ void create_obstacles(sf::RenderTarget& target) {
 }
 
 std::vector<sf::RectangleShape> rectangles;
-void make_rectangles() {
-  for (int i = 0; i < 10; ++i) {
-    sf::RectangleShape rect(sf::Vector2f(20.f, 20.f));
+void make_rectangles(int n) {
+  for (int i = 0; i < n; ++i) {
+    sf::RectangleShape rect(sf::Vector2f(2.f, 2.f));
+    rect.setOrigin(1.0f, 1.0f);
 
     // Randomly position the rectangle within the window bounds
     float x = static_cast<float>(std::rand() % (1200 - 20));
@@ -118,9 +119,7 @@ void make_rectangles() {
     rect.setPosition(x, y);
 
     // Optionally set a random color for each rectangle
-    rect.setFillColor(
-        sf::Color(static_cast<sf::Uint8>(std::rand() % 256), static_cast<sf::Uint8>(std::rand() % 256), static_cast<sf::Uint8>(std::rand() % 256)));
-
+    rect.setFillColor(sf::Color::White);
     rectangles.push_back(rect);
   }
 }
@@ -153,11 +152,6 @@ int main() {
   rect.setFillColor(sf::Color::Green);
   rect.setPosition(700, 200);
 
-  sf::RectangleShape object_rect(sf::Vector2f(20, 20));
-  object_rect.setOrigin(10, 10);
-  object_rect.setFillColor(sf::Color::Green);
-  object_rect.setPosition(200, 200);
-
   ComplexObject object(sf::Vector2f(0, 0));
 
   auto body = std::make_unique<sf::RectangleShape>(sf::Vector2f(76, 62));
@@ -176,12 +170,7 @@ int main() {
 
   object.setPosition(sf::Vector2f(400, 200));
 
-  sf::CircleShape circle2(3);
-  circle2.setOrigin(3, 3);
-  circle2.setFillColor(sf::Color::Red);
-  circle2.setPosition(400, 200);
-
-  make_rectangles();
+  make_rectangles(16);
 
   sf::Clock frame_clock;
   // Main loop
@@ -190,6 +179,7 @@ int main() {
     float dt = frame_clock.restart().asSeconds();
     float omega = 180;
     float d_theta = 0;
+    bool rotate = false;
     sf::Event event;
     while (window.pollEvent(event)) {
       if (event.type == sf::Event::Closed) {
@@ -202,9 +192,11 @@ int main() {
     if (window.hasFocus()) {
       if (sf::Keyboard::isKeyPressed(sf::Keyboard::A)) {
         d_theta = -omega * dt;
+        rotate = true;
       }
       if (sf::Keyboard::isKeyPressed(sf::Keyboard::D)) {
         d_theta = omega * dt;
+        rotate = true;
       }
     }
 
@@ -212,27 +204,22 @@ int main() {
 
     sf::Vector2i mouse_pos = sf::Mouse::getPosition(window);
     Vec2 mouse(mouse_pos.x, mouse_pos.y);
-    float d = getDistance(p, mouse);
-    float md = minimum_distance(a, b, mouse);
-    object_rect.setPosition(mouse.x, mouse.y);
-    object_rect.rotate(d_theta);
-    int phase1 = clock.restart().asMicroseconds();
 
     object.setPosition(mouse.x, mouse.y);
-    object.rotate(d_theta);
-    circle2.setPosition(object.getPosition());
-
+    if (rotate) {
+      object.rotate(d_theta);
+    }
+    object.set_colour(sf::Color::White);
     if (object.collides_with(rect)) {
       rect.setFillColor(sf::Color::Red);
-      object_rect.setFillColor(sf::Color::Red);
     } else {
       rect.setFillColor(sf::Color::Green);
-      object_rect.setFillColor(sf::Color::Blue);
     }
-    object_rect.setFillColor(sf::Color::Blue);
+    int phase1 = clock.restart().asMicroseconds();
     for (const auto& rect : rectangles) {
       if (object.collides_with(rect)) {
-        object_rect.setFillColor(sf::Color::Red);
+        object.set_colour(sf::Color::Red);
+        break;
       }
     }
     int phase2 = clock.restart().asMicroseconds();
@@ -243,22 +230,19 @@ int main() {
       window.draw(rect);
     }
 
-    draw_line(window, a, b);
-    draw_point(window, p);
-    draw_point(window, mouse);
+    //    draw_line(window, a, b);
+    //    draw_point(window, p);
+    //    draw_point(window, mouse);
     window.draw(rect);
-    window.draw(object_rect);
     object.draw(window);
-    window.draw(circle2);
     /////////////////////////////////////////////////////////
 
     int phase3 = clock.restart().asMicroseconds();
 
     std::string string = "";
     string = "times:\n";
-    string += "p to mouse: " + std::to_string(md) + " us\n";
-    string += "get mouse pos: " + std::to_string(phase2) + " us\n";
-    string += "  draw shield: " + std::to_string(phase3) + " us\n";
+    string += "   collisions: " + std::to_string(phase2) + " us\n";
+    //    string += "  draw shield: " + std::to_string(phase3) + " us\n";
     string += "    mouse pos: " + std::to_string((int)mouse_pos.x) + "," + std::to_string((int)mouse_pos.y) + " us\n";
     //    string += "   circle pos: " + std::to_string((int)object.circle_centre().x) + "," + std::to_string((int)object.circle_centre().y) + " us\n";
     //    string += "circle origin: " + std::to_string((int)object.circle_origin().x) + "," + std::to_string((int)object.circle_origin().y) + " us\n";
