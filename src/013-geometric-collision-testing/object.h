@@ -10,11 +10,12 @@ class ComplexObject {
 
   // Add a shape to the object
   void addShape(std::unique_ptr<sf::Shape> shape, const sf::Vector2f& offset) {
-    shape->setOrigin(shape->getLocalBounds().width / 2, shape->getLocalBounds().height / 2);
-    shape->setOrigin(m_center.x + offset.x, m_center.y + offset.y);
+    //    shape->setOrigin(shape->getLocalBounds().width / 2, shape->getLocalBounds().height / 2);
+    //    shape->setOrigin(m_center.x + offset.x, m_center.y + offset.y);
     shapes.push_back(std::make_pair(std::move(shape), offset));
   }
 
+  void setPosition(float x, float y) { setPosition(sf::Vector2f(x, y)); }
   void setPosition(const sf::Vector2f& position) {
     m_center = position;
     for (auto& shapePair : shapes) {
@@ -23,6 +24,7 @@ class ComplexObject {
       shape->setPosition(m_center + initialOffset);
     }
   }
+  sf::Vector2f getPosition() { return m_center; }
 
   // Rotate the object around its center
   void rotate(float angle) {

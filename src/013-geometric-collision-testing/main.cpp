@@ -253,26 +253,39 @@ int main() {
 
   sf::RectangleShape rect(sf::Vector2f(100, 100));
   rect.setFillColor(sf::Color::Green);
-  rect.setPosition(200, 200);
+  rect.setPosition(700, 200);
 
   sf::RectangleShape rect2(sf::Vector2f(100, 100));
 
   rect2.setFillColor(sf::Color::Green);
   rect2.setOrigin(50, 50);
   rect2.setPosition(200, 200);
+
   ComplexObject object(sf::Vector2f(0, 0));
-  object.addShape(std::make_unique<sf::RectangleShape>(sf::Vector2f(100, 100)), sf::Vector2f(0, 0));
-  object.addShape(std::make_unique<sf::RectangleShape>(sf::Vector2f(100, 100)), sf::Vector2f(100, 0));
+  auto body = std::make_unique<sf::RectangleShape>(sf::Vector2f(76, 62));
+  body->setFillColor(sf::Color::Transparent);
+  body->setOutlineColor(sf::Color::Magenta);
+  body->setOutlineThickness(2);
+  body->setOrigin(38, 38);
+  object.addShape(std::move(body), sf::Vector2f(0, 0));
+
+  auto head = std::make_unique<sf::CircleShape>(38);
+  head->setOrigin(38, 76);
+  head->setFillColor(sf::Color::Transparent);
+  head->setOutlineColor(sf::Color::Yellow);
+  head->setOutlineThickness(2);
+  object.addShape(std::move(head), sf::Vector2f(0, 0));
+
   object.setPosition(sf::Vector2f(400, 200));
 
-  sf::CircleShape circle2(30);
-  circle2.setOrigin(30, 45);
-  circle2.setFillColor(sf::Color::Magenta);
+  sf::CircleShape circle2(3);
+  circle2.setOrigin(3, 3);
+  circle2.setFillColor(sf::Color::Red);
   circle2.setPosition(400, 200);
-  sf::CircleShape circle3(30);
-  circle3.setFillColor(sf::Color::Cyan);
-  circle3.setOrigin(30, 90);
-  circle3.setPosition(400, 200);
+  //  sf::CircleShape circle3(30);
+  //  circle3.setFillColor(sf::Color::Cyan);
+  //  circle3.setOrigin(30, 90);
+  //  circle3.setPosition(400, 200);
 
   make_rectangles();
 
@@ -312,9 +325,9 @@ int main() {
     int phase1 = clock.restart().asMicroseconds();
     bool hit = isOverlapping(rect, rect2);
 
+    object.setPosition(mouse.x, mouse.y);
+    circle2.setPosition(object.getPosition());
     object.rotate(d_theta);
-    circle2.rotate(d_theta);
-    circle3.rotate(d_theta);
 
     if (isOverlapping(rect, rect2)) {
       rect.setFillColor(sf::Color::Red);
@@ -344,7 +357,8 @@ int main() {
     window.draw(rect2);
     object.draw(window);
     window.draw(circle2);
-    window.draw(circle3);
+    //    window.draw(circle2);
+    //    window.draw(circle3);
     /////////////////////////////////////////////////////////
 
     int phase3 = clock.restart().asMicroseconds();
