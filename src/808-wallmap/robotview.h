@@ -9,9 +9,9 @@
 #include <iostream>
 #include "robot.h"
 
-class RobotView : public sf::Sprite {
+class RobotDisplay : public sf::Sprite {
  public:
-  RobotView(Robot& robot) : m_robot(robot) {
+  RobotDisplay(Robot& robot) : m_robot(robot) {
     shape.setSize(sf::Vector2f(10, 10));  // Example size
     shape.setOrigin(5, 5);                // Center the origin for rotation
   }
