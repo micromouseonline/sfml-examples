@@ -8,7 +8,7 @@
 #include <vector>
 #include "collisions.h"
 
-class ComplexObject {
+class CollisionGeometry {
  public:
   struct ShapeData {
     std::unique_ptr<sf::Shape> shape;
@@ -16,7 +16,7 @@ class ComplexObject {
     sf::Vector2f rotatedOffset;
   };
 
-  ComplexObject(const sf::Vector2f& center) : m_center(center) {}
+  CollisionGeometry(const sf::Vector2f& center) : m_center(center) {}
 
   void addShape(std::unique_ptr<sf::Shape> shape, const sf::Vector2f& offset) {
     shape->setPosition(m_center + offset);
@@ -73,7 +73,7 @@ class ComplexObject {
   bool collides_with(const sf::RectangleShape& rect) {
     for (const auto& item : shapedata) {
       if (auto* circle = dynamic_cast<sf::CircleShape*>(item.shape.get())) {
-        if (Collisions::circle_hits_rect(*circle, rect)) {  /// only axis aligned rectangles
+        if (Collisions::circle_hits_aligned_rect(*circle, rect)) {  /// only axis aligned rectangles
           return true;
         }
       } else if (auto* this_rect = dynamic_cast<sf::RectangleShape*>(item.shape.get())) {
