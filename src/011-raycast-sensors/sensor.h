@@ -24,6 +24,13 @@ class Sensor {
   Sensor(sf::Vector2f origin, float angle, float half_angle = 5.0f, int steps = 11)
       : m_origin(origin), m_angle(angle), m_half_angle(half_angle), m_rays(steps) {}
 
+  // Returns distance between points
+  float distance(const sf::Vector2f& a, const sf::Vector2f& b) {
+    float dx = a.x - b.x;
+    float dy = a.y - b.y;
+    return std::sqrt(dx * dx + dy * dy);
+  }
+
   void set_origin(sf::Vector2f origin) { m_origin = origin; }
 
   void set_angle(float angle) { m_angle = angle; }

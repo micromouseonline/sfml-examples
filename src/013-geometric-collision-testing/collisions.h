@@ -5,143 +5,173 @@
 #ifndef COLLISIONS_H
 #define COLLISIONS_H
 
-namespace Collisions {
+struct Collisions {
+  /////////////////////////////////////////////////////////////////////
+  ///
+  /// For axis aligned rectangles:
+  ///
+  ///
+  ///
+  /// Although trivial, this wrapper function is included for consistency
+  /// with other functions in this namespace.
+  static bool point_hits_rect(sf::Vector2f& p, sf::RectangleShape& rect) { return rect.getGlobalBounds().contains(p); }
 
-/// This is a test only valid for axis aligned rectangles
-bool circle_hits_rect(const sf::CircleShape& circle, const sf::RectangleShape& rect) {
-  const sf::Vector2f circleCenter = circle.getPosition();
+  /// Function to test if two axis-aligned rectangles overlap
+  /// This is a test only valid for axis aligned rectangles
+  /// SFML already can do this but this function is a wrapper for consistency
+  /// other similar functions in this namespace.
+  static bool rect_hits_rect(const sf::FloatRect& rect1, const sf::FloatRect& rect2) { return rect1.intersects(rect2); }
 
-  const auto& rectBounds = rect.getGlobalBounds();
-  const float rectLeft = rectBounds.left;
-  const float rectTop = rectBounds.top;
-  const float rectRight = rectBounds.left + rectBounds.width;
-  const float rectBottom = rectTop + rectBounds.height;
+  /// This is a test only valid for axis aligned rectangles
+  static bool circle_hits_rect(const sf::CircleShape& circle, const sf::RectangleShape& rect) {
+    const sf::Vector2f circleCenter = circle.getPosition();
 
-  // Clamp the circle's center coordinates to the rectangle's edges
-  const float closestX = std::clamp(circleCenter.x, rectLeft, rectRight);
-  const float closestY = std::clamp(circleCenter.y, rectTop, rectBottom);
+    const auto& rectBounds = rect.getGlobalBounds();
+    const float rectLeft = rectBounds.left;
+    const float rectTop = rectBounds.top;
+    const float rectRight = rectBounds.left + rectBounds.width;
+    const float rectBottom = rectTop + rectBounds.height;
 
-  // Calculate the squared distance from the circle's center to the closest point
-  const float deltaX = circleCenter.x - closestX;
-  const float deltaY = circleCenter.y - closestY;
-  const float distanceSquared = deltaX * deltaX + deltaY * deltaY;
+    // Clamp the circle's center coordinates to the rectangle's edges
+    const float closestX = std::clamp(circleCenter.x, rectLeft, rectRight);
+    const float closestY = std::clamp(circleCenter.y, rectTop, rectBottom);
 
-  // Compare squared distances to avoid costly sqrt operation
-  const float radius = circle.getRadius();
-  return distanceSquared < (radius * radius);
-}
+    // Calculate the squared distance from the circle's center to the closest point
+    const float deltaX = circleCenter.x - closestX;
+    const float deltaY = circleCenter.y - closestY;
+    const float distanceSquared = deltaX * deltaX + deltaY * deltaY;
 
-/////////////////////////////////////////////////////////////////////
-
-// Function to project rectangle onto an axis
-std::pair<float, float> projectRectangle(const sf::RectangleShape& rect, const sf::Vector2f& axis) {
-  std::vector<sf::Vector2f> points(4);
-  for (size_t i = 0; i < 4; ++i) {
-    points[i] = rect.getTransform().transformPoint(rect.getPoint(i));
+    // Compare squared distances to avoid costly sqrt operation
+    const float radius = circle.getRadius();
+    return distanceSquared < (radius * radius);
   }
-  float min = (points[0].x * axis.x + points[0].y * axis.y);
-  float max = min;
-  for (size_t i = 1; i < 4; ++i) {
-    float projection = (points[i].x * axis.x + points[i].y * axis.y);
-    if (projection < min)
-      min = projection;
-    if (projection > max)
-      max = projection;
-  }
-  return std::make_pair(min, max);
-}
 
-// Function to check for separating axis
-bool isSeparatingAxis(const sf::RectangleShape& rect1, const sf::RectangleShape& rect2, const sf::Vector2f& axis) {
-  auto projection1 = projectRectangle(rect1, axis);
-  auto projection2 = projectRectangle(rect2, axis);
-
-  return (projection1.second < projection2.first || projection2.second < projection1.first);
-}
-
-// Function to check for overlap
-bool rectangles_overlap(const sf::RectangleShape& rect1, const sf::RectangleShape& rect2) {
-  std::vector<sf::Vector2f> axes = {rect1.getTransform().transformPoint(rect1.getPoint(1)) - rect1.getTransform().transformPoint(rect1.getPoint(0)),
-                                    rect1.getTransform().transformPoint(rect1.getPoint(3)) - rect1.getTransform().transformPoint(rect1.getPoint(0)),
-                                    rect2.getTransform().transformPoint(rect2.getPoint(1)) - rect2.getTransform().transformPoint(rect2.getPoint(0)),
-                                    rect2.getTransform().transformPoint(rect2.getPoint(3)) - rect2.getTransform().transformPoint(rect2.getPoint(0))};
-
-  for (auto& axis : axes) {
-    if (isSeparatingAxis(rect1, rect2, sf::Vector2f(-axis.y, axis.x))) {
-      return false;  // There is a separating axis, so they do not overlap
+  /////////////////////////////////////////////////////////////////////
+  ///
+  /// For arbitrarily rotated rectangles:
+  ///
+  /// This C++ function projects a 2D rectangle onto another 2D rectangle (axis).
+  /// It is used by the separating axis theorem.
+  /// The function returns a pair of floats that represent the minimum and maximum values of the projection.
+  /// The first value is the minimum, and the second value is the maximum.
+  /// The axis is a normalized vector that points in the direction of the projection.
+  static std::pair<float, float> projectRectangle(const sf::RectangleShape& rect, const sf::Vector2f& axis) {
+    std::vector<sf::Vector2f> points(4);
+    for (size_t i = 0; i < 4; ++i) {
+      points[i] = rect.getTransform().transformPoint(rect.getPoint(i));
     }
-  }
-  return true;  // No separating axis found, so they overlap
-}
-
-/////////////////////////////////////////////////////////////////////
-
-// Function to project a vector onto another vector (axis)
-float project_vector(const sf::Vector2f& vector, const sf::Vector2f& axis) {
-  // Normalize the axis to ensure a proper projection
-  float axisLengthSquared = axis.x * axis.x + axis.y * axis.y;
-  if (axisLengthSquared == 0.0f) {
-    std::cerr << "Axis vector cannot be zero in project_vector.\n";
-    return std::numeric_limits<float>::infinity();
-  }
-  return (vector.x * axis.x + vector.y * axis.y) / std::sqrt(axisLengthSquared);
-}
-
-// Helper: Get rectangle vertices in world space
-std::vector<sf::Vector2f> getRectangleVertices(const sf::RectangleShape& rect) {
-  std::vector<sf::Vector2f> vertices(4);
-  for (size_t i = 0; i < 4; ++i) {
-    vertices[i] = rect.getTransform().transformPoint(rect.getPoint(i));
-  }
-  return vertices;
-}
-
-/// This more generalise case is computationally more expensive than the axis-aligned case at the top
-bool circle_hits_rotated_rect(const sf::CircleShape& circle, const sf::RectangleShape& rect) {
-  // Circle properties
-  sf::Vector2f circleCenter = circle.getPosition();
-  float circleRadius = circle.getRadius();
-
-  // Get rectangle vertices and edges
-  auto vertices = getRectangleVertices(rect);
-  std::vector<sf::Vector2f> edges = {vertices[1] - vertices[0], vertices[2] - vertices[1], vertices[3] - vertices[2], vertices[0] - vertices[3]};
-
-  // Add the circle's center-to-vertex axes for SAT
-  for (const auto& vertex : vertices) {
-    edges.push_back(circleCenter - vertex);
+    float min = (points[0].x * axis.x + points[0].y * axis.y);
+    float max = min;
+    for (size_t i = 1; i < 4; ++i) {
+      float projection = (points[i].x * axis.x + points[i].y * axis.y);
+      if (projection < min)
+        min = projection;
+      if (projection > max)
+        max = projection;
+    }
+    return std::make_pair(min, max);
   }
 
-  // Check for overlap on all axes
-  for (const auto& edge : edges) {
-    sf::Vector2f axis(-edge.y, edge.x);  // Perpendicular axis
+  /// This function is used by the separating axis theorem.
+  /// It checks if there is a separating axis between two rectangles.
+  /// The axis is a normalized vector that points in the direction of the projection.
+  static bool isSeparatingAxis(const sf::RectangleShape& rect1, const sf::RectangleShape& rect2, const sf::Vector2f& axis) {
+    auto projection1 = projectRectangle(rect1, axis);
+    auto projection2 = projectRectangle(rect2, axis);
 
-    // Project circle onto the axis
-    float circleProjection = project_vector(circleCenter, axis);
-    float circleMin = circleProjection - circleRadius;
-    float circleMax = circleProjection + circleRadius;
+    return (projection1.second < projection2.first || projection2.second < projection1.first);
+  }
 
-    // Project rectangle onto the axis
-    float rectMin = std::numeric_limits<float>::max();
-    float rectMax = std::numeric_limits<float>::lowest();
+  /// Function to check for overlap of rectangles regardless of their rotation
+  /// This function is more general than the axis-aligned case at the top
+  /// as it can handle rotated rectangles
+  static bool rectangles_overlap(const sf::RectangleShape& rect1, const sf::RectangleShape& rect2) {
+    std::vector<sf::Vector2f> axes = {rect1.getTransform().transformPoint(rect1.getPoint(1)) - rect1.getTransform().transformPoint(rect1.getPoint(0)),
+                                      rect1.getTransform().transformPoint(rect1.getPoint(3)) - rect1.getTransform().transformPoint(rect1.getPoint(0)),
+                                      rect2.getTransform().transformPoint(rect2.getPoint(1)) - rect2.getTransform().transformPoint(rect2.getPoint(0)),
+                                      rect2.getTransform().transformPoint(rect2.getPoint(3)) - rect2.getTransform().transformPoint(rect2.getPoint(0))};
+
+    for (auto& axis : axes) {
+      if (isSeparatingAxis(rect1, rect2, sf::Vector2f(-axis.y, axis.x))) {
+        return false;  // There is a separating axis, so they do not overlap
+      }
+    }
+    return true;  // No separating axis found, so they overlap
+  }
+
+  /////////////////////////////////////////////////////////////////////
+
+  /// This C++ function projects a 2D vector onto another 2D vector (axis).
+  /// It returns the scalar value of the projection, which represents the
+  /// length of the vector's shadow on the axis.
+  ///
+  /// The function normalizes the axis vector to ensure a proper projection.
+  /// If the axis vector is zero, the function returns infinity.
+  /// In simpler terms, it calculates how much of the vector is "pointing" in
+  /// the direction of the axis.
+  static float project_vector(const sf::Vector2f& vector, const sf::Vector2f& axis) {
+    // Normalize the axis to ensure a proper projection
+    float axisLengthSquared = axis.x * axis.x + axis.y * axis.y;
+    if (axisLengthSquared == 0.0f) {
+      std::cerr << "Axis vector cannot be zero in project_vector.\n";
+      return std::numeric_limits<float>::infinity();
+    }
+    return (vector.x * axis.x + vector.y * axis.y) / std::sqrt(axisLengthSquared);
+  }
+
+  /// This function returns the 4 vertices of a rectangle in world space,
+  /// taking into account the rectangle's position, rotation, and scale.
+  static std::vector<sf::Vector2f> getRectangleVertices(const sf::RectangleShape& rect) {
+    std::vector<sf::Vector2f> vertices(4);
+    for (size_t i = 0; i < 4; ++i) {
+      vertices[i] = rect.getTransform().transformPoint(rect.getPoint(i));
+    }
+    return vertices;
+  }
+
+  /// This more generalise case is computationally more expensive than the axis-aligned case at the top
+  static bool circle_hits_rotated_rect(const sf::CircleShape& circle, const sf::RectangleShape& rect) {
+    // Circle properties
+    sf::Vector2f circleCenter = circle.getPosition();
+    float circleRadius = circle.getRadius();
+
+    // Get rectangle vertices and edges
+    auto vertices = getRectangleVertices(rect);
+    std::vector<sf::Vector2f> edges = {vertices[1] - vertices[0], vertices[2] - vertices[1], vertices[3] - vertices[2], vertices[0] - vertices[3]};
+
+    // Add the circle's center-to-vertex axes for SAT
     for (const auto& vertex : vertices) {
-      float projection = project_vector(vertex, axis);
-      rectMin = std::min(rectMin, projection);
-      rectMax = std::max(rectMax, projection);
+      edges.push_back(circleCenter - vertex);
     }
 
-    // Check for overlap
-    if (circleMax < rectMin || circleMin > rectMax) {
-      return false;  // No overlap on this axis, so no collision
+    // Check for overlap on all axes
+    for (const auto& edge : edges) {
+      sf::Vector2f axis(-edge.y, edge.x);  // Perpendicular axis
+
+      // Project circle onto the axis
+      float circleProjection = project_vector(circleCenter, axis);
+      float circleMin = circleProjection - circleRadius;
+      float circleMax = circleProjection + circleRadius;
+
+      // Project rectangle onto the axis
+      float rectMin = std::numeric_limits<float>::max();
+      float rectMax = std::numeric_limits<float>::lowest();
+      for (const auto& vertex : vertices) {
+        float projection = project_vector(vertex, axis);
+        rectMin = std::min(rectMin, projection);
+        rectMax = std::max(rectMax, projection);
+      }
+
+      // Check for overlap
+      if (circleMax < rectMin || circleMin > rectMax) {
+        return false;  // No overlap on this axis, so no collision
+      }
     }
+
+    return true;  // Overlap on all axes, collision detected
   }
+  /////////////////////////////////////////////////////////////////////
 
-  return true;  // Overlap on all axes, collision detected
-}
-/////////////////////////////////////////////////////////////////////
-bool point_hits_rect(sf::Vector2f& p, sf::RectangleShape& rect) {
-  return rect.getGlobalBounds().contains(p);
-}
-
-}  // namespace Collisions
+};  // struct Collisions
 
 #endif  // COLLISIONS_H

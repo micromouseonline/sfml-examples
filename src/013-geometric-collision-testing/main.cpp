@@ -14,13 +14,6 @@
 #define M_PI (3.14159265358979323846)
 #endif
 
-// Returns distance between points
-inline float distance(const sf::Vector2f& a, const sf::Vector2f& b) {
-  float dx = a.x - b.x;
-  float dy = a.y - b.y;
-  return std::sqrt(dx * dx + dy * dy);
-}
-
 int offsx = 10;
 int offsy = 10;
 
