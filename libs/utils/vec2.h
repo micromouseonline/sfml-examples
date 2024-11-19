@@ -60,7 +60,7 @@ inline float minimum_distance(Vec2 v, Vec2 w, Vec2 p) {
   // Return minimum distance between line segment vw and point p
   Vec2 line = w - v;
   const float l2 = line.length();  // i.e. |w-v|^2 -  avoid a sqrt
-  if (l2 == 0.0)
+  if (std::fabs(l2) <= std::numeric_limits<float>::epsilon())
     return getDistance(p, v);  // v == w case
   // Consider the line extending the segment, parameterized as v + t (w - v).
   // We find projection of point p onto the line.
