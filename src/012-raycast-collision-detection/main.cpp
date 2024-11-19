@@ -282,6 +282,7 @@ int main() {
       }
     }
     sf::Clock clock;
+    int phase1 = clock.getElapsedTime().asMicroseconds();
     sf::Color shield_colour = sf::Color::Green;
 
     // Clear the window
@@ -309,6 +310,7 @@ int main() {
           break;
         }
       }
+      phase1 = clock.restart().asMicroseconds();
       if (can_move) {
         mouse.setTextureRect(normal);
         mouse.rotate(d_theta);
@@ -327,7 +329,6 @@ int main() {
     //    window.draw(mouse);
     robot_view.update();
     robot_view.draw(window);
-    int phase1 = clock.restart().asMicroseconds();
 
     sf::Vector2f mousePosition = static_cast<sf::Vector2f>(sf::Mouse::getPosition(window));
 
@@ -347,6 +348,7 @@ int main() {
     string = "times:\n";
     string += "test and move: " + std::to_string(phase1) + " us\n";
     string += "get mouse pos: " + std::to_string(phase2) + " us\n";
+    string += "  draw shield: " + std::to_string(phase3) + " us\n";
     string += "  draw shield: " + std::to_string(phase3) + " us\n";
     int total = phase1 + phase2 + phase3;
     frame_time.update(total);
