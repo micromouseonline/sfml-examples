@@ -205,7 +205,8 @@ int main() {
     if (object.collides_with(aa_rect)) {
       aa_rect.setFillColor(sf::Color::Red);
     }
-    if (Collisions::point_hits_rect(mouse_pos, aa_rect)) {
+
+    if (Collisions::point_hits_aligned_rect(mouse_pos, aa_rect)) {
       aa_rect.setFillColor(sf::Color::Yellow);
     }
 
