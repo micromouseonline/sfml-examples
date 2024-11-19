@@ -3,6 +3,7 @@
 
 #include <SFML/Graphics.hpp>
 #include <cmath>
+#include <iostream>
 #include <memory>
 #include <vector>
 #include "collisions.h"
@@ -38,10 +39,7 @@ class ComplexObject {
       rotatedOffset.y = initialOffset.x * sinAngle + initialOffset.y * cosAngle;
       shape->setPosition(m_center + rotatedOffset);
       shape->rotate(angle);
-      std::cout << initialOffset.x << "," << initialOffset.y << " -> ";
-      std::cout << rotatedOffset.x << "," << rotatedOffset.y;
     }
-    std::cout << std::endl;
   }
 
   void setPosition(float x, float y) { setPosition(sf::Vector2f(x, y)); }
@@ -50,9 +48,7 @@ class ComplexObject {
     m_center = position;
     for (const auto& item : shapedata) {
       item.shape->setPosition(m_center + item.rotatedOffset);
-      //      std::cout << item.shape->getPosition().x << ", " << item.shape->getPosition().y << "   ";
     }
-    std::cout << std::endl;
   }
 
   sf::Vector2f getPosition() const { return m_center; }
@@ -77,11 +73,11 @@ class ComplexObject {
   bool collides_with(const sf::RectangleShape& rect) {
     for (const auto& item : shapedata) {
       if (auto* circle = dynamic_cast<sf::CircleShape*>(item.shape.get())) {
-        if (isCircleOverlappingRectangle(rect, *circle)) {
+        if (Collisions::circle_hits_rect(*circle, rect)) {  /// only axis aligned rectangles
           return true;
         }
       } else if (auto* this_rect = dynamic_cast<sf::RectangleShape*>(item.shape.get())) {
-        if (isOverlapping(rect, *this_rect)) {
+        if (Collisions::rectangles_overlap(rect, *this_rect)) {
           return true;
         }
       }
@@ -93,9 +89,6 @@ class ComplexObject {
   sf::Vector2f m_center;
   float m_angle = 0;
   sf::Color m_colour = sf::Color::White;
-  //  std::vector<std::pair<std::unique_ptr<sf::Shape>, sf::Vector2f>> shapes;
-  //  std::vector<std::pair<std::unique_ptr<sf::Shape>, sf::Vector2f>> originalOffsets;
-
   std::vector<ShapeData> shapedata;  // List of shapes and their offsets
 };
 

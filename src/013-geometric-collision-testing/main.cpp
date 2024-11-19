@@ -141,36 +141,32 @@ int main() {
   text.setCharacterSize(24);                     // in pixels, not points!
   text.setFillColor(sf::Color(255, 0, 0, 255));  // it can be any colour//  text.setStyle(sf::Text::Bold | sf::Text::Underlined);  // and have the usual styles
 
-  Vec2 a(100, 100);
-  Vec2 b(100, 200);
-  Vec2 p(20, 30);
   sf::CircleShape circle(30);
   circle.setOrigin(30, 30);
   circle.setFillColor(sf::Color::Blue);
 
-  sf::RectangleShape rect(sf::Vector2f(100, 100));
-  rect.setFillColor(sf::Color::Green);
-  rect.setPosition(700, 200);
+  sf::RectangleShape aa_rect(sf::Vector2f(100, 100));
+  aa_rect.setFillColor(sf::Color::Green);
+  aa_rect.setOrigin(50, 50);
+  aa_rect.setPosition(700, 200);
+  //  rotated_rect.setRotation(45);
 
   ComplexObject object(sf::Vector2f(0, 0));
 
+  /// The components of the collision shape are added in order from bottom to top
+  /// THe first one added will be the under he rest and is first checked
+  auto head = std::make_unique<sf::CircleShape>(38);
+  head->setOrigin(38, 38);
+  head->setFillColor(sf::Color::Yellow);
+  object.addShape(std::move(head), sf::Vector2f(0, -31));
   auto body = std::make_unique<sf::RectangleShape>(sf::Vector2f(76, 62));
-  body->setFillColor(sf::Color::Transparent);
-  body->setOutlineColor(sf::Color::Magenta);
-  body->setOutlineThickness(2);
+  body->setFillColor(sf::Color::Magenta);
   body->setOrigin(38, 31);
   object.addShape(std::move(body), sf::Vector2f(0, 0));
 
-  auto head = std::make_unique<sf::CircleShape>(38);
-  head->setOrigin(38, 38);
-  head->setFillColor(sf::Color::Transparent);
-  head->setOutlineColor(sf::Color::Yellow);
-  head->setOutlineThickness(2);
-  object.addShape(std::move(head), sf::Vector2f(0, -38));
-
   object.setPosition(sf::Vector2f(400, 200));
 
-  make_rectangles(16);
+  make_rectangles(116);
 
   sf::Clock frame_clock;
   // Main loop
@@ -200,9 +196,8 @@ int main() {
       }
     }
 
-    sf::Clock clock;
-
-    sf::Vector2i mouse_pos = sf::Mouse::getPosition(window);
+    sf::Vector2i mp = sf::Mouse::getPosition(window);
+    sf::Vector2f mouse_pos(static_cast<float>(mp.x), static_cast<float>(mp.y));
     Vec2 mouse(mouse_pos.x, mouse_pos.y);
 
     object.setPosition(mouse.x, mouse.y);
@@ -210,11 +205,17 @@ int main() {
       object.rotate(d_theta);
     }
     object.set_colour(sf::Color::White);
-    if (object.collides_with(rect)) {
-      rect.setFillColor(sf::Color::Red);
-    } else {
-      rect.setFillColor(sf::Color::Green);
+
+    /// do some tests on a single axis-aligned rectangle
+    sf::Clock clock;
+    aa_rect.setFillColor(sf::Color::Blue);
+    if (object.collides_with(aa_rect)) {
+      aa_rect.setFillColor(sf::Color::Red);
     }
+    if (Collisions::point_hits_rect(mouse_pos, aa_rect)) {
+      aa_rect.setFillColor(sf::Color::Yellow);
+    }
+
     int phase1 = clock.restart().asMicroseconds();
     for (const auto& rect : rectangles) {
       if (object.collides_with(rect)) {
@@ -223,34 +224,27 @@ int main() {
       }
     }
     int phase2 = clock.restart().asMicroseconds();
+
     /////////////////////////////////////////////////////////
     // Clear the window
     window.clear(sf::Color::Black);
+
     for (const auto& rect : rectangles) {
       window.draw(rect);
     }
+    window.draw(aa_rect);
 
-    //    draw_line(window, a, b);
-    //    draw_point(window, p);
-    //    draw_point(window, mouse);
-    window.draw(rect);
     object.draw(window);
     /////////////////////////////////////////////////////////
 
-    int phase3 = clock.restart().asMicroseconds();
-
     std::string string = "";
-    string = "times:\n";
-    string += "   collisions: " + std::to_string(phase2) + " us\n";
-    //    string += "  draw shield: " + std::to_string(phase3) + " us\n";
-    string += "    mouse pos: " + std::to_string((int)mouse_pos.x) + "," + std::to_string((int)mouse_pos.y) + " us\n";
-    //    string += "   circle pos: " + std::to_string((int)object.circle_centre().x) + "," + std::to_string((int)object.circle_centre().y) + " us\n";
-    //    string += "circle origin: " + std::to_string((int)object.circle_origin().x) + "," + std::to_string((int)object.circle_origin().y) + " us\n";
-    // string += " circle angle: " + std::to_string((int)object..circle_origin().x) + "," + std::to_string((int)object.circle_origin().y) + " us\n";
-    int total = phase1 + phase2 + phase3;
+    string += "  single rect: " + std::to_string(phase1) + " us\n";
+    string += "   many rects: " + std::to_string(phase2) + " us\n";
+    string += "    mouse pos: " + std::to_string((int)mp.x) + "," + std::to_string((int)mp.y) + "\n";
     text.setString(string);
-    text.setPosition(600, 50);
+    text.setPosition(600, 10);
     window.draw(text);
+
     // Display the window
     window.display();
   }

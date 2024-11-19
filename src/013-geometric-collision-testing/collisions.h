@@ -2,26 +2,33 @@
 // Created by peter on 18/11/24.
 //
 
-#ifndef IMGUI_SFML_STARTER_COLLISIONS_H
-#define IMGUI_SFML_STARTER_COLLISIONS_H
+#ifndef COLLISIONS_H
+#define COLLISIONS_H
 
-bool isCircleOverlappingRectangle(const sf::RectangleShape& rect, const sf::CircleShape& circle) {
-  // Adjust for the circle's origin offset
-  sf::Vector2f circleCenter;
-  circleCenter.x = circle.getPosition().x;  //+ circle.getOrigin().x;
-  circleCenter.y = circle.getPosition().y;  // circleCenter = circle.getPosition()   - circle.getOrigin();
+namespace Collisions {
 
-  // Find the closest point to the circle within the rectangle
-  float closestX = std::clamp(circleCenter.x, rect.getPosition().x, rect.getPosition().x + rect.getSize().x);
-  float closestY = std::clamp(circleCenter.y, rect.getPosition().y, rect.getPosition().y + rect.getSize().y);
+/// This is a test only valid for axis aligned rectangles
+bool circle_hits_rect(const sf::CircleShape& circle, const sf::RectangleShape& rect) {
+  const sf::Vector2f circleCenter = circle.getPosition();
 
-  // Calculate the distance between the circle's center and this closest point
-  float distanceX = circleCenter.x - closestX;
-  float distanceY = circleCenter.y - closestY;
+  const auto& rectBounds = rect.getGlobalBounds();
+  const float rectLeft = rectBounds.left;
+  const float rectTop = rectBounds.top;
+  const float rectRight = rectBounds.left + rectBounds.width;
+  const float rectBottom = rectTop + rectBounds.height;
 
-  // Calculate the distance squared and compare with the radius squared
-  float distanceSquared = (distanceX * distanceX) + (distanceY * distanceY);
-  return distanceSquared < (circle.getRadius() * circle.getRadius());
+  // Clamp the circle's center coordinates to the rectangle's edges
+  const float closestX = std::clamp(circleCenter.x, rectLeft, rectRight);
+  const float closestY = std::clamp(circleCenter.y, rectTop, rectBottom);
+
+  // Calculate the squared distance from the circle's center to the closest point
+  const float deltaX = circleCenter.x - closestX;
+  const float deltaY = circleCenter.y - closestY;
+  const float distanceSquared = deltaX * deltaX + deltaY * deltaY;
+
+  // Compare squared distances to avoid costly sqrt operation
+  const float radius = circle.getRadius();
+  return distanceSquared < (radius * radius);
 }
 
 /////////////////////////////////////////////////////////////////////
@@ -53,7 +60,7 @@ bool isSeparatingAxis(const sf::RectangleShape& rect1, const sf::RectangleShape&
 }
 
 // Function to check for overlap
-bool isOverlapping(const sf::RectangleShape& rect1, const sf::RectangleShape& rect2) {
+bool rectangles_overlap(const sf::RectangleShape& rect1, const sf::RectangleShape& rect2) {
   std::vector<sf::Vector2f> axes = {rect1.getTransform().transformPoint(rect1.getPoint(1)) - rect1.getTransform().transformPoint(rect1.getPoint(0)),
                                     rect1.getTransform().transformPoint(rect1.getPoint(3)) - rect1.getTransform().transformPoint(rect1.getPoint(0)),
                                     rect2.getTransform().transformPoint(rect2.getPoint(1)) - rect2.getTransform().transformPoint(rect2.getPoint(0)),
@@ -69,51 +76,72 @@ bool isOverlapping(const sf::RectangleShape& rect1, const sf::RectangleShape& re
 
 /////////////////////////////////////////////////////////////////////
 
-// Function to project a point onto an axis
-float projectPoint(const sf::Vector2f& point, const sf::Vector2f& axis) {
-  return (point.x * axis.x + point.y * axis.y);
+// Function to project a vector onto another vector (axis)
+float project_vector(const sf::Vector2f& vector, const sf::Vector2f& axis) {
+  // Normalize the axis to ensure a proper projection
+  float axisLengthSquared = axis.x * axis.x + axis.y * axis.y;
+  if (axisLengthSquared == 0.0f) {
+    std::cerr << "Axis vector cannot be zero in project_vector.\n";
+    return std::numeric_limits<float>::infinity();
+  }
+  return (vector.x * axis.x + vector.y * axis.y) / std::sqrt(axisLengthSquared);
 }
 
-// Function to get the closest point on the rectangle to the circle center
-sf::Vector2f getClosestPointOnRectangle(const sf::RectangleShape& rect, const sf::Vector2f& circleCenter) {
-  sf::Vector2f closestPoint = circleCenter;
+// Helper: Get rectangle vertices in world space
+std::vector<sf::Vector2f> getRectangleVertices(const sf::RectangleShape& rect) {
   std::vector<sf::Vector2f> vertices(4);
   for (size_t i = 0; i < 4; ++i) {
     vertices[i] = rect.getTransform().transformPoint(rect.getPoint(i));
   }
-
-  for (const auto& axis : {sf::Vector2f(1, 0), sf::Vector2f(0, 1)}) {
-    float minDistance = std::numeric_limits<float>::max();
-    for (const auto& vertex : vertices) {
-      float distance = std::abs(projectPoint(vertex - circleCenter, axis));
-      if (distance < minDistance) {
-        minDistance = distance;
-        if (axis.x == 1) {
-          closestPoint.x = vertex.x;
-        } else {
-          closestPoint.y = vertex.y;
-        }
-      }
-    }
-  }
-  return closestPoint;
+  return vertices;
 }
 
-// Function to check for overlap
-bool isCircleOverlappingRotatedRectangle(const sf::CircleShape& circle, const sf::RectangleShape& rect) {
-  // Get circle properties
-  sf::Vector2f circleCenter = circle.getPosition() + sf::Vector2f(circle.getRadius(), circle.getRadius());
+/// This more generalise case is computationally more expensive than the axis-aligned case at the top
+bool circle_hits_rotated_rect(const sf::CircleShape& circle, const sf::RectangleShape& rect) {
+  // Circle properties
+  sf::Vector2f circleCenter = circle.getPosition();
   float circleRadius = circle.getRadius();
 
-  // Get the closest point on the rectangle to the circle center
-  sf::Vector2f closestPoint = getClosestPointOnRectangle(rect, circleCenter);
+  // Get rectangle vertices and edges
+  auto vertices = getRectangleVertices(rect);
+  std::vector<sf::Vector2f> edges = {vertices[1] - vertices[0], vertices[2] - vertices[1], vertices[3] - vertices[2], vertices[0] - vertices[3]};
 
-  // Calculate the distance between the closest point and the circle center
-  float distanceX = circleCenter.x - closestPoint.x;
-  float distanceY = circleCenter.y - closestPoint.y;
-  float distanceSquared = (distanceX * distanceX) + (distanceY * distanceY);
+  // Add the circle's center-to-vertex axes for SAT
+  for (const auto& vertex : vertices) {
+    edges.push_back(circleCenter - vertex);
+  }
 
-  return distanceSquared < (circleRadius * circleRadius);
+  // Check for overlap on all axes
+  for (const auto& edge : edges) {
+    sf::Vector2f axis(-edge.y, edge.x);  // Perpendicular axis
+
+    // Project circle onto the axis
+    float circleProjection = project_vector(circleCenter, axis);
+    float circleMin = circleProjection - circleRadius;
+    float circleMax = circleProjection + circleRadius;
+
+    // Project rectangle onto the axis
+    float rectMin = std::numeric_limits<float>::max();
+    float rectMax = std::numeric_limits<float>::lowest();
+    for (const auto& vertex : vertices) {
+      float projection = project_vector(vertex, axis);
+      rectMin = std::min(rectMin, projection);
+      rectMax = std::max(rectMax, projection);
+    }
+
+    // Check for overlap
+    if (circleMax < rectMin || circleMin > rectMax) {
+      return false;  // No overlap on this axis, so no collision
+    }
+  }
+
+  return true;  // Overlap on all axes, collision detected
+}
+/////////////////////////////////////////////////////////////////////
+bool point_hits_rect(sf::Vector2f& p, sf::RectangleShape& rect) {
+  return rect.getGlobalBounds().contains(p);
 }
 
-#endif  // IMGUI_SFML_STARTER_COLLISIONS_H
+}  // namespace Collisions
+
+#endif  // COLLISIONS_H
