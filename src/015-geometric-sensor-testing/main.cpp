@@ -3,6 +3,7 @@
 #include <string>
 #include "maze.h"
 #include "object.h"
+#include "sensor.h"
 
 #ifndef M_PI
 #define M_PI (3.14159265358979323846)
@@ -44,58 +45,6 @@
 //////////////////////////////////////////////////////////////////////////////////////////////////
 ///
 ///
-
-// Function to calculate the intersection of a line with a rectangle edge
-bool intersectLineWithEdge(sf::Vector2f p0, sf::Vector2f p1, sf::Vector2f q0, sf::Vector2f q1, sf::Vector2f& intersection) {
-  sf::Vector2f r = p1 - p0;
-  sf::Vector2f s = q1 - q0;
-  float rxs = r.x * s.y - r.y * s.x;
-  float qpxr = (q0.x - p0.x) * r.y - (q0.y - p0.y) * r.x;
-
-  if (rxs == 0 && qpxr == 0) {
-    return false;  // Lines are collinear
-  }
-  if (rxs == 0 && qpxr != 0) {
-    return false;  // Lines are parallel
-  }
-
-  float t = ((q0.x - p0.x) * s.y - (q0.y - p0.y) * s.x) / rxs;
-  float u = ((q0.x - p0.x) * r.y - (q0.y - p0.y) * r.x) / rxs;
-
-  if (t >= 0 && t <= 1 && u >= 0 && u <= 1) {
-    intersection = p0 + t * r;
-    return true;
-  }
-  return false;
-}
-
-// Function to check for the first intersection
-bool firstIntersection(sf::Vector2f lineStart, sf::Vector2f lineEnd, const sf::RectangleShape& rect, sf::Vector2f& intersectionPoint) {
-  bool foundIntersection = false;
-  float closestT = std::numeric_limits<float>::max();
-
-  sf::FloatRect bounds = rect.getGlobalBounds();
-  sf::Vector2f topLeft(bounds.left, bounds.top);
-  sf::Vector2f topRight(bounds.left + bounds.width, bounds.top);
-  sf::Vector2f bottomLeft(bounds.left, bounds.top + bounds.height);
-  sf::Vector2f bottomRight(bounds.left + bounds.width, bounds.top + bounds.height);
-
-  std::vector<sf::Vector2f> edgesStart = {topLeft, topRight, bottomRight, bottomLeft};
-  std::vector<sf::Vector2f> edgesEnd = {topRight, bottomRight, bottomLeft, topLeft};
-
-  for (size_t i = 0; i < edgesStart.size(); ++i) {
-    sf::Vector2f currentIntersection;
-    if (intersectLineWithEdge(lineStart, lineEnd, edgesStart[i], edgesEnd[i], currentIntersection)) {
-      float t = (currentIntersection - lineStart).x / (lineEnd - lineStart).x;
-      if (t < closestT) {
-        closestT = t;
-        intersectionPoint = currentIntersection;
-        foundIntersection = true;
-      }
-    }
-  }
-  return foundIntersection;
-}
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -165,6 +114,21 @@ int main() {
   sf::Vector2f sensor_end(255, 200);
   sf::Vector2f sensor_intersection(0, 0);
 
+  sf::Vector2f lfs_offs = sf::Vector2f(-30, -40);
+  sf::Vector2f lds_offs = sf::Vector2f(-10, -50);
+  sf::Vector2f rds_offs = sf::Vector2f(+10, -50);
+  sf::Vector2f rfs_offs = sf::Vector2f(+30, -40);
+
+  float lfs_ang = -90 - 10;
+  float lds_ang = -180 + 30;
+  float rds_ang = 0 - 30;
+  float rfs_ang = -90 + 10;
+
+  Sensor sensor_lfs(collision_geometry.position() + sf::Vector2f(-30, -40), 0);
+  Sensor sensor_lds(collision_geometry.position() + sf::Vector2f(-30, -40), 0);
+  Sensor sensor_rds(collision_geometry.position() + sf::Vector2f(-30, -40), 0);
+  Sensor sensor_rfs(collision_geometry.position() + sf::Vector2f(-30, -40), 0);
+
   sf::Clock frame_clock;
   // Main loop
   while (window.isOpen()) {
@@ -210,6 +174,26 @@ int main() {
 
     sf::Clock clock;
 
+    sf::RectangleShape block(sf::Vector2f(100, 100));
+    block.setFillColor(sf::Color::Blue);
+    block.setOrigin(50, 50);
+    block.setPosition(200, 200);
+
+    sf::Vector2f lfs_pos = rotatePoint(lfs_offs, {0, 0}, collision_geometry.angle());
+    sf::Vector2f lds_pos = rotatePoint(lds_offs, {0, 0}, collision_geometry.angle());
+    sf::Vector2f rds_pos = rotatePoint(rds_offs, {0, 0}, collision_geometry.angle());
+    sf::Vector2f rfs_pos = rotatePoint(rfs_offs, {0, 0}, collision_geometry.angle());
+
+    sensor_lfs.set_origin(collision_geometry.position() + lfs_pos);
+    sensor_lds.set_origin(collision_geometry.position() + lds_pos);
+    sensor_rds.set_origin(collision_geometry.position() + rds_pos);
+    sensor_rfs.set_origin(collision_geometry.position() + rfs_pos);
+
+    sensor_lfs.set_angle(collision_geometry.angle() + lfs_ang);
+    sensor_lds.set_angle(collision_geometry.angle() + lds_ang);
+    sensor_rds.set_angle(collision_geometry.angle() + rds_ang);
+    sensor_rfs.set_angle(collision_geometry.angle() + rfs_ang);
+
     sf::Vector2f old_cg = collision_geometry.position();
     float old_angle = collision_geometry.angle();
     if (move) {
@@ -221,12 +205,10 @@ int main() {
       collision_geometry.setPosition(collision_geometry.position() + movement);
     }
     bool collided = false;
+    float f;
     /// set the object colours to highlight collisions
+    sf::Vector2f sensor_dir = sensor_end - sensor_start;
     for (auto& wall : maze->walls) {
-      for (int i = 0; i < 60; i++) {
-        firstIntersection(sensor_start, sensor_end, wall, sensor_intersection);  // this is really slow
-      }
-
       wall.setFillColor(sf::Color::Red);
       if (collision_geometry.collides_with(wall)) {
         collided = true;
@@ -251,13 +233,23 @@ int main() {
     window.clear(sf::Color::Black);
     maze->draw(window);
     collision_geometry.draw(window);
-    draw_line(window, sensor_start, sensor_intersection, sf::Color::Green);
+
+    window.draw(block);
+
+    float lfs = sensor_lfs.draw(window, block);
+    float lds = sensor_lds.draw(window, block);
+    float rds = sensor_rds.draw(window, block);
+    float rfs = sensor_rfs.draw(window, block);
+
     std::string string = "";
     string += " WASD keys move robot\n\n";
     string += "           FPS: " + std::to_string((int)(1.0f / dt)) + "\n";
     string += "     mouse pos: " + std::to_string((int)cg.x) + "," + std::to_string((int)cg.y) + "\n";
     string += "check and move: " + std::to_string(phase1) + " us\n";
-    string += " sensor_length: " + std::to_string(sen_len) + " mm\n";
+    string += "    sensor_lfs: " + std::to_string(int(lfs)) + " mm\n";
+    string += "    sensor_lds: " + std::to_string(int(lds)) + " mm\n";
+    string += "    sensor_rds: " + std::to_string(int(rds)) + " mm\n";
+    string += "    sensor_rfs: " + std::to_string(int(rfs)) + " mm\n";
     if (collided) {
       text.setFillColor(sf::Color::Yellow);
     } else {
