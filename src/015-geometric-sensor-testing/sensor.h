@@ -1,82 +1,108 @@
-//
-// Created by peter on 04/11/24.
-//
-
 #ifndef SENSOR_H
 #define SENSOR_H
 
+#include <SFML/Graphics.hpp>
+#include <vector>
 #include "utils.h"
 
-/***
- * simulate a single sensor by casting out a fan of rays.
- * @param renderTarget  - the place we will draw the rays
- * @param image - holds the map
- * @param pos  - the position of the emitter
- * @param angle - the angle of the centre of the fan
- * @param width - the angle subtended by the fan
- * @param steps - how many rays to use in the fan
- * @return - the average distance of all the rays
- */
-
-const float RADIANS = (3.14159265359f / 180.0f);
+const float DEG_TO_RAD = 3.14159265359f / 180.0f;
 
 class Sensor {
  public:
-  Sensor(sf::Vector2f origin, float angle, float half_angle = 5.0f, int steps = 11)
-      : m_origin(origin), m_angle(angle), m_half_angle(half_angle), m_rays(steps) {}
+  Sensor(sf::Vector2f origin, float angle, float half_angle = 5.0f, int ray_count = 16)
+      : m_origin(origin), m_angle(angle), m_half_angle(half_angle), m_rays(ray_count + 1) {
+    m_vertices.resize(m_rays);
+    m_vertices.setPrimitiveType(sf::TriangleFan);
+    m_vertices[0].position = m_origin;  // First vertex is the origin
+    m_vertices[0].color = sf::Color(128, 0, 128);
 
-  // Returns distance between points
-  float distance(const sf::Vector2f& a, const sf::Vector2f& b) {
-    float dx = a.x - b.x;
-    float dy = a.y - b.y;
-    return std::sqrt(dx * dx + dy * dy);
+    m_max_range = 500.0f;
+    m_power = 0.0f;
+    m_distance = 0.0f;
   }
 
-  void set_origin(sf::Vector2f origin) { m_origin = origin; }
-
-  void set_angle(float angle) {
-    m_angle = angle;
-    float theta = (float)(angle * M_PI) / 180.0f;
-    m_dir = sf::Vector2f(cosf(theta), sinf(theta));
+  void set_origin(const sf::Vector2f& origin) {
+    m_origin = origin;
+    m_vertices[0].position = m_origin;  // Update origin vertex
   }
 
-  float draw(sf::RenderTarget& renderTarget, sf::RectangleShape& m_rectangle) {
-    float power = 0;
+  /// The sensor fan will be centered on this angle and spread +/- the half-angle
+  void set_angle(float angle) { m_angle = angle; }
 
-    float ray_angle = m_angle - m_half_angle;
+  void set_half_angle(float half_angle) { m_half_angle = half_angle; }
 
-    float inc = 2.0f * m_half_angle / (float)m_rays;
+  void set_ray_count(int ray_count) { m_rays = ray_count; }
 
-    float start_angle = (m_angle - m_half_angle) * RADIANS;
-    float end_angle = (m_angle + m_half_angle) * RADIANS;
-    float inc_angle = (end_angle - start_angle) / (float)m_rays;
+  [[nodiscard]] float power() const { return m_power; }
+  [[nodiscard]] float distance() const { return m_distance; }
 
-    sf::Vertex line[] = {sf::Vertex(m_origin), sf::Vertex(m_origin)};
-    sf::Color color(128, 0, 128);
-    line[0].color = color;
-    for (int i = 0; i < m_rays; i++) {
-      float theta = (ray_angle + i * inc) * M_PI / 180.0f;
-      sf::Vector2f dir = sf::Vector2f(cosf(theta), sinf(theta));
+  /***
+   * generate a complete sensor fan for every rectangle in the supplied
+   * vector. This is surprisingly fast. Even so, in the actual simulation
+   * the rectangles passed in will only be those surrounding cells.
+   * The eight immediate neighbours should be enough so a maximum of
+   * 32 rectangles is required.
+   * @param obstacles
+   */
+  void update(const std::vector<sf::RectangleShape>& obstacles) {
+    // Calculate angular increment for rays
+    float startAngle = (m_angle - m_half_angle) * DEG_TO_RAD;
+    float endAngle = (m_angle + m_half_angle) * DEG_TO_RAD;
+    float angleIncrement = (endAngle - startAngle) / float(m_rays - 1);
 
-      float angle = start_angle + i * inc_angle;
-      dir = sf::Vector2f(std::cos(angle), std::sin(angle));
-      float rayLength = 400.0f;
+    float total_power = 0;
+    float total_distance = 0;
 
-      // Compute the end point of the ray
-      sf::Vector2f endPoint = {m_origin.x + rayLength * std::cos(angle), m_origin.y + rayLength * std::sin(angle)};
-      float p = test_to_rect(m_rectangle, dir);
-      sf::Vector2f hitPosition = m_origin + dir * p;
-      line[1].position = hitPosition;
-      line[1].color = color - sf::Color(0, 0, 0, 255 - p);
-      renderTarget.draw(line, 2, sf::Lines);
-      power += p;
+    for (int i = 1; i < m_rays; ++i) {  // Remember to skip origin (index 0)
+      float angle = startAngle + float(i - 1) * angleIncrement;
+      sf::Vector2f dir = {std::cos(angle), std::sin(angle)};
+
+      float closestHit = m_max_range;
+      for (const auto& rect : obstacles) {
+        float distance = test_to_rect(rect, dir);
+        if (distance < closestHit) {
+          closestHit = distance;
+        }
+      }
+      // Update the ray endpoint
+      sf::Vector2f hitPosition = m_origin + dir * closestHit;
+      m_vertices[i].position = hitPosition;
+      m_vertices[i].color = sf::Color(128, 0, 128, 255 * (1.0f - closestHit / m_max_range));
+
+      /// Accumulate distance and power for averaging
+      /// you cannot do te power afterwards form the average distance
+      /// because power is not linear with distance.
+      /// perhaps we should only record power and always calculate
+      /// distance - as in the real mouse
+      /// TODO: implement a proper function that calculates power
+      float power = 855.0f / closestHit;
+      power = power * power;
+      total_power += power;
+      total_distance += closestHit;
     }
-    float average = power / (float)m_rays;
-    return std::min(average, 1024.0f);
+
+    m_distance = std::min(total_distance / float(m_rays - 1), m_max_range);
+    m_power = std::min(total_power / float(m_rays - 1), 1024.0f);
   }
 
-  float test_to_rect(const sf::RectangleShape& rectangle, sf::Vector2f ray_dir, float maxRayLength = 255.0f) {
-    // Get the global bounds of the rectangle
+  /// The sensor will be drawn as a triangle fan. This is really
+  /// fast because the GPU does all the work from the vertex list
+  void draw(sf::RenderTarget& renderTarget) const { renderTarget.draw(m_vertices); }
+
+ private:
+  /***
+   * This is the meat of the business. A single ray is tested for intersection
+   * with an axis-aligned rectangle. Two such tests are needed, one for the far
+   * side and one for the near side. We only care about the closest one and we
+   * do not know if it is the first one found or the second so we find both
+   * and work it out after.
+   * TODO: I do not fully understand this function.
+   * @param rectangle
+   * @param ray_dir - as a normalised vector
+   * @return the distance to the closest intersection or the maze range if
+   * there is no intersection
+   */
+  float test_to_rect(const sf::RectangleShape& rectangle, const sf::Vector2f& ray_dir) {
     sf::FloatRect bounds = rectangle.getGlobalBounds();
     sf::Vector2f rectMin(bounds.left, bounds.top);
     sf::Vector2f rectMax(bounds.left + bounds.width, bounds.top + bounds.height);
@@ -84,7 +110,6 @@ class Sensor {
     float tmin = -std::numeric_limits<float>::infinity();
     float tmax = std::numeric_limits<float>::infinity();
 
-    // Check each axis (x and y)
     for (int i = 0; i < 2; ++i) {
       float origin = (i == 0) ? m_origin.x : m_origin.y;
       float dir = (i == 0) ? ray_dir.x : ray_dir.y;
@@ -92,43 +117,41 @@ class Sensor {
       float max = (i == 0) ? rectMax.x : rectMax.y;
 
       if (std::abs(dir) < 1e-6) {
-        // Ray is parallel to the axis
         if (origin < min || origin > max) {
-          return 1300.f;  // No intersection
+          // No intersection
+          return m_max_range;
         }
       } else {
-        // Compute intersection times for the axis
         float t1 = (min - origin) / dir;
         float t2 = (max - origin) / dir;
 
-        if (t1 > t2) {
+        if (t1 > t2)
           std::swap(t1, t2);
-        }  // Ensure t1 is the near intersection
         tmin = std::max(tmin, t1);
         tmax = std::min(tmax, t2);
 
-        if (tmin > tmax)
-          return 200.f;  // No intersection
+        if (tmin > tmax) {
+          // No intersection
+          return m_max_range;
+        }
       }
     }
-    // If tmax < 0, the intersection is behind the ray origin
-    if (tmax < 0)
-      return 200.f;
-
-    // If the nearest intersection is beyond the maximum ray length, return no intersection
-    if (tmin > maxRayLength)
-      return maxRayLength;
-
-    // Return the nearest positive intersection distance
-    return tmin >= 0 ? tmin : tmax;
+    if (tmax < 0) {
+      // Intersection behind the ray origin. Are we INSIDE the box?
+      return m_max_range;
+    }
+    return std::min(tmin >= 0 ? tmin : tmax, m_max_range);  // Intersection behind the ray origin
   }
 
   sf::Vector2f m_origin = {0, 0};
-  sf::Vector2f m_dir = {0, 0};
+  float m_angle;
+  float m_half_angle;
+  float m_max_range;
+  int m_rays;
+  float m_power;
+  float m_distance;
 
-  int m_rays = 10;
-  float m_half_angle = 5.0f;
-  float m_angle = 0.0f;
+  sf::VertexArray m_vertices;
 };
 
 #endif  // SENSOR_H

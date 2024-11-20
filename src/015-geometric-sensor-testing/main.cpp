@@ -78,18 +78,18 @@ int main() {
   /// Create a collision object representing the mouse geometry
   /// The components of the collision shape are added in order from bottom to top
   /// THe first one added will be the under he rest and is first checked
-  CollisionGeometry collision_geometry(sf::Vector2f(0, 0));
+  CollisionGeometry robot(sf::Vector2f(0, 0));
   auto head = std::make_unique<sf::CircleShape>(38);
   head->setOrigin(38, 38);
   head->setFillColor(sf::Color(0, 66, 0, 255));
-  collision_geometry.addShape(std::move(head), sf::Vector2f(0, -31));
+  robot.addShape(std::move(head), sf::Vector2f(0, -31));
   auto body = std::make_unique<sf::RectangleShape>(sf::Vector2f(76, 62));
   body->setFillColor(sf::Color(0, 76, 0, 255));
   body->setOrigin(38, 31);
-  collision_geometry.addShape(std::move(body), sf::Vector2f(0, 0));
+  robot.addShape(std::move(body), sf::Vector2f(0, 0));
 
-  collision_geometry.setPosition(90, 90);
-  collision_geometry.setRotation(180);
+  robot.setPosition(96, 96);
+  robot.setRotation(180);
   std::unique_ptr<Maze> maze = std::make_unique<Maze>();
   maze->add_posts(5, 5);
   /// note that  this is a simple demo, nothing stops duplicate walls
@@ -109,10 +109,10 @@ int main() {
 
   float v = 180;
   float omega = 180;
-
-  sf::Vector2f sensor_start(140, 40);
-  sf::Vector2f sensor_end(255, 200);
-  sf::Vector2f sensor_intersection(0, 0);
+  //
+  //  sf::Vector2f sensor_start(140, 40);
+  //  sf::Vector2f sensor_end(255, 200);
+  //  sf::Vector2f sensor_intersection(0, 0);
 
   sf::Vector2f lfs_offs = sf::Vector2f(-30, -40);
   sf::Vector2f lds_offs = sf::Vector2f(-10, -50);
@@ -124,10 +124,11 @@ int main() {
   float rds_ang = 0 - 30;
   float rfs_ang = -90 + 10;
 
-  Sensor sensor_lfs(collision_geometry.position() + sf::Vector2f(-30, -40), 0);
-  Sensor sensor_lds(collision_geometry.position() + sf::Vector2f(-30, -40), 0);
-  Sensor sensor_rds(collision_geometry.position() + sf::Vector2f(-30, -40), 0);
-  Sensor sensor_rfs(collision_geometry.position() + sf::Vector2f(-30, -40), 0);
+  /// there seems to be little penalty for having a large number of rays.
+  Sensor sensor_lfs(robot.position() + lfs_offs, robot.angle(), 5, 64);
+  Sensor sensor_lds(robot.position() + lds_offs, robot.angle(), 5, 64);
+  Sensor sensor_rds(robot.position() + rds_offs, robot.angle(), 5, 64);
+  Sensor sensor_rfs(robot.position() + rfs_offs, robot.angle(), 5, 64);
 
   sf::Clock frame_clock;
   // Main loop
@@ -170,86 +171,84 @@ int main() {
         d_s = -v * dt;
         move = true;
       }
+      if (sf::Keyboard::isKeyPressed(sf::Keyboard::LShift) || sf::Keyboard::isKeyPressed(sf::Keyboard::RShift)) {
+        d_s /= 10;
+        d_theta /= 10;
+      }
     }
 
     sf::Clock clock;
 
-    sf::RectangleShape block(sf::Vector2f(100, 100));
-    block.setFillColor(sf::Color::Blue);
-    block.setOrigin(50, 50);
-    block.setPosition(200, 200);
-
-    sf::Vector2f lfs_pos = rotatePoint(lfs_offs, {0, 0}, collision_geometry.angle());
-    sf::Vector2f lds_pos = rotatePoint(lds_offs, {0, 0}, collision_geometry.angle());
-    sf::Vector2f rds_pos = rotatePoint(rds_offs, {0, 0}, collision_geometry.angle());
-    sf::Vector2f rfs_pos = rotatePoint(rfs_offs, {0, 0}, collision_geometry.angle());
-
-    sensor_lfs.set_origin(collision_geometry.position() + lfs_pos);
-    sensor_lds.set_origin(collision_geometry.position() + lds_pos);
-    sensor_rds.set_origin(collision_geometry.position() + rds_pos);
-    sensor_rfs.set_origin(collision_geometry.position() + rfs_pos);
-
-    sensor_lfs.set_angle(collision_geometry.angle() + lfs_ang);
-    sensor_lds.set_angle(collision_geometry.angle() + lds_ang);
-    sensor_rds.set_angle(collision_geometry.angle() + rds_ang);
-    sensor_rfs.set_angle(collision_geometry.angle() + rfs_ang);
-
-    sf::Vector2f old_cg = collision_geometry.position();
-    float old_angle = collision_geometry.angle();
+    sf::Vector2f old_cg = robot.position();
+    float old_angle = robot.angle();
     if (move) {
-      float angle = collision_geometry.angle() + d_theta;
+      float angle = robot.angle() + d_theta;
       float dx = std::cos((angle - 90.0f) * 3.14f / 180.0f) * d_s;
       float dy = std::sin((angle - 90.0f) * 3.14f / 180.0f) * d_s;
       sf::Vector2f movement(dx, dy);
-      collision_geometry.rotate(d_theta);
-      collision_geometry.setPosition(collision_geometry.position() + movement);
+      robot.rotate(d_theta);
+      robot.setPosition(robot.position() + movement);
     }
     bool collided = false;
-    float f;
     /// set the object colours to highlight collisions
-    sf::Vector2f sensor_dir = sensor_end - sensor_start;
     for (auto& wall : maze->walls) {
       wall.setFillColor(sf::Color::Red);
-      if (collision_geometry.collides_with(wall)) {
+      if (robot.collides_with(wall)) {
         collided = true;
         wall.setFillColor(sf::Color::Yellow);
         break;
       }
     }
     if (collided) {
-      collision_geometry.setPosition(old_cg);
-      collision_geometry.setRotation(old_angle);
-      // d_s = 0;
-      // d_theta = 0;
-      // collided = false;
+      robot.setPosition(old_cg);
+      robot.setRotation(old_angle);
     }
-    int phase1 = clock.restart().asMicroseconds();
-    sf::Vector2f cg = collision_geometry.position();
+
+    /// Update the sensor geometry. This is done after we have
+    /// decided if we have collided or not so the angles and positions are correct
+    /// TODO: put all this together somewhere less ugly
+    sf::Vector2f lfs_pos = rotatePoint(lfs_offs, {0, 0}, robot.angle());
+    sf::Vector2f lds_pos = rotatePoint(lds_offs, {0, 0}, robot.angle());
+    sf::Vector2f rds_pos = rotatePoint(rds_offs, {0, 0}, robot.angle());
+    sf::Vector2f rfs_pos = rotatePoint(rfs_offs, {0, 0}, robot.angle());
+
+    sensor_lfs.set_origin(robot.position() + lfs_pos);
+    sensor_lds.set_origin(robot.position() + lds_pos);
+    sensor_rds.set_origin(robot.position() + rds_pos);
+    sensor_rfs.set_origin(robot.position() + rfs_pos);
+
+    sensor_lfs.set_angle(robot.angle() + lfs_ang);
+    sensor_lds.set_angle(robot.angle() + lds_ang);
+    sensor_rds.set_angle(robot.angle() + rds_ang);
+    sensor_rfs.set_angle(robot.angle() + rfs_ang);
+
+    sf::Int64 phase1 = clock.restart().asMicroseconds();
+    sf::Vector2f cg = robot.position();
 
     /////////////////////////////////////////////////////////
-    sf::Vector2f v = sensor_intersection - sensor_start;
-    int sen_len = int(std::sqrt(v.x * v.x + v.y * v.y));
     /////////////////////////////////////////////////////////
     window.clear(sf::Color::Black);
     maze->draw(window);
-    collision_geometry.draw(window);
+    robot.draw(window);
 
-    window.draw(block);
+    sensor_lfs.update(maze->walls);
+    sensor_lds.update(maze->walls);
+    sensor_rds.update(maze->walls);
+    sensor_rfs.update(maze->walls);
+    sensor_lfs.draw(window);
+    sensor_lds.draw(window);
+    sensor_rds.draw(window);
+    sensor_rfs.draw(window);
 
-    float lfs = sensor_lfs.draw(window, block);
-    float lds = sensor_lds.draw(window, block);
-    float rds = sensor_rds.draw(window, block);
-    float rfs = sensor_rfs.draw(window, block);
-
-    std::string string = "";
+    std::string string;
     string += " WASD keys move robot\n\n";
     string += "           FPS: " + std::to_string((int)(1.0f / dt)) + "\n";
     string += "     mouse pos: " + std::to_string((int)cg.x) + "," + std::to_string((int)cg.y) + "\n";
     string += "check and move: " + std::to_string(phase1) + " us\n";
-    string += "    sensor_lfs: " + std::to_string(int(lfs)) + " mm\n";
-    string += "    sensor_lds: " + std::to_string(int(lds)) + " mm\n";
-    string += "    sensor_rds: " + std::to_string(int(rds)) + " mm\n";
-    string += "    sensor_rfs: " + std::to_string(int(rfs)) + " mm\n";
+    string += "    sensor_lfs: " + std::to_string(int(sensor_lfs.power())) + " -> " + std::to_string(int(sensor_lfs.distance())) + " mm\n";
+    string += "    sensor_lds: " + std::to_string(int(sensor_lds.power())) + " -> " + std::to_string(int(sensor_lds.distance())) + " mm\n";
+    string += "    sensor_rds: " + std::to_string(int(sensor_rds.power())) + " -> " + std::to_string(int(sensor_rds.distance())) + " mm\n";
+    string += "    sensor_rfs: " + std::to_string(int(sensor_rfs.power())) + " -> " + std::to_string(int(sensor_rfs.distance())) + " mm\n";
     if (collided) {
       text.setFillColor(sf::Color::Yellow);
     } else {
