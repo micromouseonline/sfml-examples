@@ -1,15 +1,8 @@
-#include <math.h>
 #include <SFML/Graphics.hpp>
 #include <cmath>
-#include <iostream>
 #include <string>
-#include "collisions.h"
-#include "expfilter.h"
 #include "maze.h"
 #include "object.h"
-#include "robot.h"
-#include "robotview.h"
-#include "vec2.h"
 
 #ifndef M_PI
 #define M_PI (3.14159265358979323846)
@@ -52,9 +45,10 @@ int main() {
   // Create the window
   /// Any antialiasing has to be set globally when creating the window:
   sf::ContextSettings settings;
-  settings.antialiasingLevel = 8;  // the number of multisamplings to use. 4 is probably fine
+  settings.antialiasingLevel = 8;  // the number of multi-samplings to use. 4 is probably fine
   sf::RenderWindow window(sf::VideoMode(1200, 800), WINDOW_TITLE, sf::Style::Default, settings);
 
+  window.setFramerateLimit(60);
   sf::Font font;
   if (!font.loadFromFile("./assets/fonts/consolas.ttf")) {
     exit(1);
@@ -65,11 +59,10 @@ int main() {
   text.setCharacterSize(20);                     // in pixels, not points!
   text.setFillColor(sf::Color(255, 0, 0, 255));  // it can be any colour//  text.setStyle(sf::Text::Bold | sf::Text::Underlined);  // and have the usual styles
 
-  CollisionGeometry collision_geometry(sf::Vector2f(0, 0));
-
-  /// Create hte collision object representing the mouse geometry
+  /// Create a collision object representing the mouse geometry
   /// The components of the collision shape are added in order from bottom to top
   /// THe first one added will be the under he rest and is first checked
+  CollisionGeometry collision_geometry(sf::Vector2f(0, 0));
   auto head = std::make_unique<sf::CircleShape>(38);
   head->setOrigin(38, 38);
   head->setFillColor(sf::Color(0, 66, 0, 255));
@@ -79,6 +72,8 @@ int main() {
   body->setOrigin(38, 31);
   collision_geometry.addShape(std::move(body), sf::Vector2f(0, 0));
 
+  collision_geometry.setPosition(90, 90);
+  collision_geometry.setRotation(180);
   std::unique_ptr<Maze> maze = std::make_unique<Maze>();
   maze->add_posts(5, 5);
   /// note that  this is a simple demo, nothing stops duplicate walls
@@ -96,18 +91,18 @@ int main() {
   maze->add_wall(1, 1, EAST);
   maze->add_wall(0, 2, EAST);
 
+  float v = 180;
+  float omega = 180;
+
   sf::Clock frame_clock;
   // Main loop
   while (window.isOpen()) {
     // Event handling
     float dt = frame_clock.restart().asSeconds();
-    float v = 180;
-    float omega = 180;
     float d_theta = 0;
     float d_s = 0;
-    bool rotate = false;
     bool move = false;
-    sf::Event event;
+    sf::Event event{};
     while (window.pollEvent(event)) {
       if (event.type == sf::Event::Closed) {
         window.close();
@@ -119,31 +114,36 @@ int main() {
     if (window.hasFocus()) {
       if (sf::Keyboard::isKeyPressed(sf::Keyboard::A)) {
         d_theta = -omega * dt;
-        rotate = true;
+        // rotate = true;
+        move = true;
       }
       if (sf::Keyboard::isKeyPressed(sf::Keyboard::D)) {
         d_theta = omega * dt;
-        rotate = true;
+        move = true;
+        // rotate = true;
       }
-      if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up)) {
+      if (sf::Keyboard::isKeyPressed(sf::Keyboard::W)) {
         d_s = v * dt;
+        move = true;
       }
-      if (sf::Keyboard::isKeyPressed(sf::Keyboard::Down)) {
+      if (sf::Keyboard::isKeyPressed(sf::Keyboard::S)) {
         d_s = -v * dt;
+        move = true;
       }
-    }
-
-    sf::Vector2i mp = sf::Mouse::getPosition(window);
-    sf::Vector2f mouse_pos(static_cast<float>(mp.x), static_cast<float>(mp.y));
-    Vec2 mouse(mouse_pos.x, mouse_pos.y);
-
-    collision_geometry.setPosition(mouse.x, mouse.y);
-    if (rotate) {
-      collision_geometry.rotate(d_theta);
     }
 
     sf::Clock clock;
 
+    sf::Vector2f old_cg = collision_geometry.position();
+    float old_angle = collision_geometry.angle();
+    if (move) {
+      float angle = collision_geometry.angle() + d_theta;
+      float dx = std::cos((angle - 90.0f) * 3.14f / 180.0f) * d_s;
+      float dy = std::sin((angle - 90.0f) * 3.14f / 180.0f) * d_s;
+      sf::Vector2f movement(dx, dy);
+      collision_geometry.rotate(d_theta);
+      collision_geometry.setPosition(collision_geometry.position() + movement);
+    }
     bool collided = false;
     /// set the object colours to highlight collisions
     for (auto& wall : maze->walls) {
@@ -154,7 +154,15 @@ int main() {
         break;
       }
     }
+    if (collided) {
+      collision_geometry.setPosition(old_cg);
+      collision_geometry.setRotation(old_angle);
+      // d_s = 0;
+      // d_theta = 0;
+      // collided = false;
+    }
     int phase1 = clock.restart().asMicroseconds();
+    sf::Vector2f cg = collision_geometry.position();
 
     /////////////////////////////////////////////////////////
     window.clear(sf::Color::Black);
@@ -162,9 +170,10 @@ int main() {
     collision_geometry.draw(window);
 
     std::string string = "";
-    string += " press A,D to rotate robot\n\n";
-    string += "        mouse pos: " + std::to_string((int)mp.x) + "," + std::to_string((int)mp.y) + "\n";
-    string += " collision checks: " + std::to_string(phase1) + " us\n";
+    string += " WASD keys move robot\n\n";
+    string += "           FPS: " + std::to_string((int)(1.0f / dt)) + "\n";
+    string += "     mouse pos: " + std::to_string((int)cg.x) + "," + std::to_string((int)cg.y) + "\n";
+    string += "check and move: " + std::to_string(phase1) + " us\n";
     if (collided) {
       text.setFillColor(sf::Color::Yellow);
     } else {

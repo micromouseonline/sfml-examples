@@ -16,7 +16,7 @@ class CollisionGeometry {
     sf::Vector2f rotatedOffset;
   };
 
-  CollisionGeometry(const sf::Vector2f& center) : m_center(center) {}
+  explicit CollisionGeometry(const sf::Vector2f& center) : m_center(center) {}
 
   void addShape(std::unique_ptr<sf::Shape> shape, const sf::Vector2f& offset) {
     shape->setPosition(m_center + offset);
@@ -27,19 +27,7 @@ class CollisionGeometry {
   void rotate(float angle) {
     // Convert angle from degrees to radians
     m_angle += angle;
-    float radAngle = m_angle * (3.14159265359f / 180.f);
-    float cosAngle = std::cos(radAngle);
-    float sinAngle = std::sin(radAngle);
-
-    for (auto& shape_data : shapedata) {
-      auto& shape = shape_data.shape;
-      auto& initialOffset = shape_data.originalOffset;
-      auto& rotatedOffset = shape_data.rotatedOffset;
-      rotatedOffset.x = initialOffset.x * cosAngle - initialOffset.y * sinAngle;
-      rotatedOffset.y = initialOffset.x * sinAngle + initialOffset.y * cosAngle;
-      shape->setPosition(m_center + rotatedOffset);
-      shape->rotate(angle);
-    }
+    setRotation(m_angle);
   }
 
   void setPosition(float x, float y) { setPosition(sf::Vector2f(x, y)); }
@@ -51,26 +39,40 @@ class CollisionGeometry {
     }
   }
 
-  sf::Vector2f getPosition() const { return m_center; }
+  void setRotation(float angle) {
+    m_angle = angle;
+    float radAngle = m_angle * (3.14159265359f / 180.f);
+    float cosAngle = std::cos(radAngle);
+    float sinAngle = std::sin(radAngle);
+
+    for (auto& shape_data : shapedata) {
+      auto& shape = shape_data.shape;
+      auto& initialOffset = shape_data.originalOffset;
+      auto& rotatedOffset = shape_data.rotatedOffset;
+      rotatedOffset.x = initialOffset.x * cosAngle - initialOffset.y * sinAngle;
+      rotatedOffset.y = initialOffset.x * sinAngle + initialOffset.y * cosAngle;
+      shape->setPosition(m_center + rotatedOffset);
+      shape->setRotation(angle);
+    }
+  }
+
+  float angle() const { return m_angle; }
+
+  sf::Vector2f position() const { return m_center; }
 
   void draw(sf::RenderWindow& window) {
     for (const auto& item : shapedata) {
       window.draw(*item.shape);
     }
-    sf::RectangleShape square({14, 14});
-    square.setOrigin(7, 7);
-    square.setFillColor(m_colour);
-    square.setPosition(m_center);
-    square.setRotation(m_angle);
-    window.draw(square);
-    sf::CircleShape dot(4, 4);
-    dot.setOrigin(4, 4);
-    dot.setFillColor(sf::Color::Red);
+
+    sf::CircleShape dot(8);
+    dot.setOrigin(8, 8);
+    dot.setFillColor(m_colour);
     dot.setPosition(m_center);
     window.draw(dot);
   }
 
-  bool collides_with(const sf::RectangleShape& rect) {
+  bool collides_with(const sf::RectangleShape& rect) const {
     for (const auto& item : shapedata) {
       if (auto* circle = dynamic_cast<sf::CircleShape*>(item.shape.get())) {
         if (Collisions::circle_hits_aligned_rect(*circle, rect)) {  /// only axis aligned rectangles
