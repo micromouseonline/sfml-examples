@@ -110,7 +110,12 @@ int main() {
       if (sf::Keyboard::isKeyPressed(sf::Keyboard::Escape)) {
         window.close();
       }
+      if (event.type == sf::Event::Resized) {
+        sf::FloatRect visibleArea(0, 0, (float)event.size.width, (float)event.size.height);
+        window.setView(sf::View(visibleArea));  // or everything distorts
+      }
     }
+
     if (window.hasFocus()) {
       if (sf::Keyboard::isKeyPressed(sf::Keyboard::A)) {
         d_theta = -omega * dt;
