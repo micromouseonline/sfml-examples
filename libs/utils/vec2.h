@@ -2,17 +2,27 @@
 // Created by peter on 18/11/24.
 //
 
-#ifndef IMGUI_SFML_STARTER_VEC2_H
-#define IMGUI_SFML_STARTER_VEC2_H
+#ifndef VEC2_H
+#define VEC2_H
 
+#include <SFML/Graphics.hpp>
 #include <cmath>
 
 struct Vec2 {
-  Vec2() : x(0.0f), y(0.0f) {}
-
-  Vec2(float x_, float y_) : x(x_), y(y_) {}
-
   float x, y;
+
+  Vec2() : x(0.0f), y(0.0f) {}
+  Vec2(float x_, float y_) : x(x_), y(y_) {}
+  Vec2(const sf::Vector2f& v) : x(v.x), y(v.y) {}
+  Vec2(const sf::Vector2i& v) : x(v.x), y(v.y) {}
+  Vec2(const sf::Vector2u& v) : x(v.x), y(v.y) {}
+
+  /// convert to sf::Vector2f
+  operator sf::Vector2f() const { return sf::Vector2f(x, y); }
+  /// convert to sf::Vector2i
+  operator sf::Vector2i() const { return sf::Vector2i((int)x, (int)y); }
+  /// convert to sf::Vector2u  - POTENTIALLY DANGEROUS - DROPS SIGN
+  operator sf::Vector2u() const { return sf::Vector2u((unsigned int)x, (unsigned int)y); }
 
   void operator+=(const Vec2& v) {
     x += v.x;
