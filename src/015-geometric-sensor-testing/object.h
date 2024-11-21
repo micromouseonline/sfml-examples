@@ -16,7 +16,7 @@ class CollisionGeometry {
     sf::Vector2f rotatedOffset;
   };
 
-  explicit CollisionGeometry(const sf::Vector2f& center) : m_center(center) {}
+  explicit CollisionGeometry(const sf::Vector2f& center) : m_center(center) { m_colour = sf::Color::White; }
 
   void addShape(std::unique_ptr<sf::Shape> shape, const sf::Vector2f& offset) {
     shape->setPosition(m_center + offset);
@@ -27,6 +27,13 @@ class CollisionGeometry {
   void rotate(float angle) {
     // Convert angle from degrees to radians
     m_angle += angle;
+    while (m_angle > 360) {
+      m_angle -= 360;
+    }
+    while (m_angle < 0) {
+      m_angle += 360;
+    }
+
     setRotation(m_angle);
   }
 
@@ -68,6 +75,7 @@ class CollisionGeometry {
     sf::CircleShape dot(8);
     dot.setOrigin(8, 8);
     dot.setFillColor(m_colour);
+    //    dot.setFillColor(sf::Color::White);
     dot.setPosition(m_center);
     window.draw(dot);
   }
