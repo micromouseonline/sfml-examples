@@ -73,3 +73,7 @@ void Window::Update() {
     }
   }
 }
+void Window::SetTitle(const std::string& title) {
+  m_windowTitle = title;
+  m_window.setTitle(m_windowTitle);
+}

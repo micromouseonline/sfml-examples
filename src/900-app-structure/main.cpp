@@ -12,36 +12,17 @@
 #define M_PI (3.14159265358979323846)
 #endif
 /***
- * This app tests the ability to do collision detection by geometry. The robot will have its
- * geometry defined by a number of shapes. In this case a single circle and a rectangle which
- * approximates the shape of Decimus 4 and Decimus 5. Polygons could also be used but are not
- * implemented here.
+ * This ap starts to take the 015 example and convert it to a more generic application structure.
  *
- * The collision object has a nominal centre which corresponds to the robot centre of rotation.
- * The collision object is, then, defined in the robot coordinate frame. The shapes are added
- * with their position determined by an offset from that centre.
+ * There are more generic classes used to assemble the application. In particular, main()
+ * has little to do besides initialise the application and then run it. All the actual work
+ * is done in the application class which manages its own window(s) and resources.
  *
- * In the utility file collisions.h, you will find various collision detection functions. For
- * a micromouse in the maze, we are concerned with collisions with axis aligned rectangles
- * representing the posts and walls.
+ * The structure is derived from code associated with the book
+ * "SFML Game Development by Example" by Maxime Lévesque
  *
- * A half-size maze can have more than 2000 posts and walls. Even though a single collision
- * test might take only a couple of microseconds, attempting to test against all the posts and
- * walls will take several milliseconds.
- *
- * A better solution is to create a list of all the posts and walls in the current cel and its
- * eight neighbours and just test against them. That represents a maximum of about 30 objects.
- * that will bring the collision detect ion down to 150 microseconds making it feasible on
- * every millisecond tick of the robot control loop.
- *
- * Since a micromouse in the maze does not have any direct means to detect a collision, this
- * checking should be performed by the simulation code which might then send a message to the
- * robot or set a flag in shared state. Typical real collisions don't affect the robot in a
- * way that you might expect. Gyro controlled robots, for example, are able to slide along a
- * wall at an angle.
- *
- * The most appropriate response might be to halt the robot for log checking.
- *
+ * The repository for the book code is at:
+ * https://github.com/SFML/SFML-Game-Development-By-Example
  *
  */
 
@@ -102,13 +83,13 @@ void configure_sensor_geometry(CollisionGeometry& robot) {
   sensor_rds.set_angle(robot.angle() + rds_ang);
   sensor_rfs.set_angle(robot.angle() + rfs_ang);
 }
-/// there seems to be little penalty for having a large number of rays.
 
 int main() {
   // Program entry point.
-  Application app;  // Creating our game object.
+  Application app;
+  app.GetWindow()->SetTitle("HARRY THE ROBOT");
   while (!app.GetWindow()->IsDone()) {
-    // Game loop.
+    // Application loop.
     app.HandleInput();
     app.Update();
     app.Render();
