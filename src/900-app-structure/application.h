@@ -8,6 +8,12 @@
 #include <SFML/Graphics.hpp>
 #include "window.h"
 
+#include "maze.h"
+#include "robot-control.h"
+#include "robot-display.h"
+#include "robot.h"
+#include "sensor-data.h"
+
 class Application {
  public:
   Application();
