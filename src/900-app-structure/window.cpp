@@ -80,10 +80,24 @@ void Window::Update() {
       m_isDone = true;
     } else if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::F5) {
       ToggleFullscreen();
+    } else {
+      Event e = {EventType::SFML_EVENT, event, {}};
+      NotifyObservers(e);
     }
   }
 }
+
 void Window::SetTitle(const std::string& title) {
   m_windowTitle = title;
   m_window.setTitle(m_windowTitle);
+}
+
+void Window::AddObserver(IEventObserver* observer) {
+  m_observers.push_back(observer);
+}
+
+void Window::NotifyObservers(const Event& event) {
+  for (auto& observer : m_observers) {
+    observer->OnEvent(event);
+  }
 }
