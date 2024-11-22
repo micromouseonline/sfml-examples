@@ -51,15 +51,6 @@
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-void draw_line(sf::RenderTarget& target, sf::Vector2f pos, sf::Vector2f vec, sf::Color color = sf::Color::White) {
-  sf::Vertex line[2];
-  line[0].position = {pos.x, pos.y};
-  line[0].color = color;
-  line[1].position = {vec.x, vec.y};
-  line[1].color = color;
-  target.draw(line, 2, sf::Lines);
-}
-
 struct RobotState {
   sf::Vector2f pos{96.0f, 96.0f};
   int angle = 0.0f;
