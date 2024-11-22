@@ -4,6 +4,11 @@
 
 #include "window.h"
 
+/***
+ * The window manager really just looks after things like creating and destroying
+ * the main window.
+ * It also handles events and updating the window.
+ */
 Window::Window() {
   m_window.create(sf::VideoMode(640, 480), "Window from constructor");
 }
@@ -21,14 +26,17 @@ void Window::Setup(const std::string title, const sf::Vector2u& size) {
   m_windowSize = size;
   m_isFullscreen = false;
   m_isDone = false;
+  /// To change the properties, you have to re-create the screen
   Destroy();
   Create();
   m_window.setFramerateLimit(60);
 }
 
 void Window::Create() {
+  sf::ContextSettings settings;
+  settings.antialiasingLevel = 8;  // the number of multi-samplings to use. 4 is probably fine
   auto style = (m_isFullscreen ? sf::Style::Fullscreen : sf::Style::Default);
-  m_window.create({m_windowSize.x, m_windowSize.y, 32}, m_windowTitle, style);
+  m_window.create({m_windowSize.x, m_windowSize.y, 32}, m_windowTitle, style, settings);
 }
 
 void Window::Destroy() {
@@ -58,9 +66,11 @@ sf::Vector2u Window::GetWindowSize() {
 }
 
 void Window::ToggleFullscreen() {
-  m_isFullscreen = !m_isFullscreen;
-  Destroy();
-  Create();
+  /// This is disabled for now because it can leave your screen
+  /// in the same resolution as the window size which is no fun.
+  //  m_isFullscreen = !m_isFullscreen;
+  //  Destroy();
+  //  Create();
 }
 
 void Window::Update() {

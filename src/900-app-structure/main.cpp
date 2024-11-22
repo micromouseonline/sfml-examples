@@ -15,7 +15,7 @@
 #define M_PI (3.14159265358979323846)
 #endif
 /***
- * This ap starts to take the 015 example and convert it to a more generic application structure.
+ * This app starts to take the 015 example and convert it to a more generic application structure.
  *
  * There are more generic classes used to assemble the application. In particular, main()
  * has little to do besides initialise the application and then run it. All the actual work
@@ -87,38 +87,11 @@ void configure_sensor_geometry(CollisionGeometry& robot) {
   sensor_rfs.set_angle(robot.angle() + rfs_ang);
 }
 
-/// ChatGPT main suggestion:
-int mainx() {
-  sf::RenderWindow window(sf::VideoMode(800, 600), "Robot Simulation");
-  ThreadSafeQueue logQueue;
-
-  Robot robot{0, 0, 0};
-  Maze maze;
-  SensorData sensorData;
-  RobotControl robotControl(robot, maze, sensorData, logQueue);
-  RobotDisplay robotDisplay(robotControl, window, logQueue);
-
-  // Run the robot control logic in a separate thread
-  std::thread controlThread([&robotControl]() { robotControl.run(); });
-
-  // Run the display logic in the main thread
-  robotDisplay.run();
-
-  // Join threads before exiting
-  controlThread.join();
-  return 0;
-}
 int main() {
   // Program entry point.
   Application app;
-  app.GetWindow()->SetTitle("HARRY THE ROBOT");
-  while (!app.GetWindow()->IsDone()) {
-    // Application loop.
-    app.HandleInput();
-    app.Update();
-    app.Render();
-    app.RestartClock();
-  }
+  app.GetWindow()->SetTitle("Marty Mouse");
+  app.Run();
   return 0;
   // Create the window
   /// Any antialiasing has to be set globally when creating the window:
@@ -308,5 +281,29 @@ int main() {
 
   ImGui::SFML::Shutdown();
 
+  return 0;
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////
+
+/// ChatGPT main suggestion:
+int mainx() {
+  sf::RenderWindow window(sf::VideoMode(800, 600), "Robot Simulation");
+  ThreadSafeQueue logQueue;
+
+  Robot robot{0, 0, 0};
+  Maze maze;
+  SensorData sensorData;
+  RobotControl robotControl(robot, maze, sensorData, logQueue);
+  RobotDisplay robotDisplay(robotControl, window, logQueue);
+
+  // Run the robot control logic in a separate thread
+  std::thread controlThread([&robotControl]() { robotControl.run(); });
+
+  // Run the display logic in the main thread
+  robotDisplay.run();
+
+  // Join threads before exiting
+  controlThread.join();
   return 0;
 }

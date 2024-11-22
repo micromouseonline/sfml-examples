@@ -37,6 +37,7 @@ class Window {
   bool IsFullscreen() const;
 
   sf::Vector2u GetWindowSize();
+  sf::RenderWindow* GetRenderWindow() { return &m_window; }
 
   /// Used to draw any drawable object into the window. The actual window variable
   /// is private so we do not have direct access to it
