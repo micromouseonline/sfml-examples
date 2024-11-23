@@ -55,6 +55,7 @@ class RobotDisplay : IEventObserver {
     robotShape.setFillColor(sf::Color::Blue);  // Robot body color
 
     // Draw the robot's heading as a line
+    orientation *= 3.141592f / 180.0f;
     sf::VertexArray headingLine(sf::Lines, 2);
     headingLine[0].position = pose;
     headingLine[0].color = sf::Color::Red;  // Line starting point color

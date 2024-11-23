@@ -6,7 +6,7 @@
 #include <iostream>
 #include <thread>
 
-Robot::Robot() : m_running(false), m_pose(0.0f, 0.0f), m_orientation(0.0f) {
+Robot::Robot() : m_running(false), m_pose(300.0f, 300.0f), m_orientation(0.0f) {
 }
 
 Robot::~Robot() {
@@ -31,31 +31,40 @@ void Robot::Stop() {
 
 void Robot::Run() {
   /// for testing, just have the robot run around in a circle.
-  const sf::Vector2f center(300.0f, 300.0f);                       // Center of the circle
-  const float radius = 200.0f;                                     // Radius of the circle
-  const float angularSpeed = 60.0f;                                // Degrees per second
-  const float angularSpeedRad = angularSpeed * 3.14159f / 180.0f;  // Radians per second
+  const sf::Vector2f initialCenter(300.0f, 300.0f);  // Center of the circle
+  const float initialRadius = 100.0f;                // Radius of the circle
+  const float initialAngularSpeed = 60.0f;           // Degrees per second
+
+  m_control.SetCircularTrajectory(initialCenter, initialRadius, initialAngularSpeed);
 
   sf::Clock clock;
   while (m_running) {
     sf::Time elapsed = clock.restart();  // Time since last update
     float deltaTime = elapsed.asSeconds();
+    deltaTime = 0.01f;
 
-    // Calculate the current angle based on elapsed time
-    static float angle = 0.0f;
-    angle += angularSpeedRad * deltaTime;
+    // Get the velocities from the RobotControl class
+    float linearVelocity = m_control.GetLinearVelocity();
+    float angularVelocity = m_control.GetAngularVelocity();
+    //    angularVelocity = 60.0f;
 
-    // Keep angle within [0, 2π]
-    if (angle >= 2 * 3.14159f) {
-      angle -= 2 * 3.14159f;
-    }
-
-    // Update robot's position and orientation
     {
       std::lock_guard<std::mutex> lock(m_stateMutex);
-      m_pose.x = center.x + radius * std::cos(angle);  // x = cx + r * cos(θ)
-      m_pose.y = center.y + radius * std::sin(angle);  // y = cy + r * sin(θ)
-      m_orientation = 2 * angle;                       // Orientation matches the tangent angle
+
+      // Update orientation
+      m_orientation += angularVelocity * deltaTime;
+
+      // Keep orientation within [0, 360) degrees
+      if (m_orientation >= 360.0f) {
+        m_orientation -= 360.0f;
+      } else if (m_orientation < 0.0f) {
+        m_orientation += 360.0f;
+      }
+
+      // Update position based on linear velocity and orientation
+      float orientationRad = m_orientation * 3.14159f / 180.0f;  // Convert to radians for trigonometric functions
+      m_pose.x += linearVelocity * std::cos(orientationRad) * deltaTime;
+      m_pose.y += linearVelocity * std::sin(orientationRad) * deltaTime;
     }
 
     std::this_thread::sleep_for(std::chrono::milliseconds(10));  // 100 Hz loop

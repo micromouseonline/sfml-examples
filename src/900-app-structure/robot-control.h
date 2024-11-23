@@ -54,97 +54,35 @@
 
 class RobotControl {
  public:
-  void (*run)(void*);
-  void Update(SensorData& data) {}
-#if 0
-  /// You can only create a controller once there is a robot and so on
-  RobotControl() = delete;
+  RobotControl() : m_linearVelocity(0.0f), m_angularVelocity(0.0f), m_center(0.0f, 0.0f), m_radius(0.0f){};
 
-  RobotControl(Robot& robot, Maze& maze, SensorData& sensorData, ThreadSafeQueue& logQueue)
-      : mRobot(robot), mMaze(maze), mSensorData(sensorData), mRunning(false), mLogQueue(logQueue) {
-    //
-  }
+  // Updates the control logic with the current sensor data
+  void Update(const SensorData& sensorData) {
+    // nothing happens based on sensor datain this test
+  };
 
-  void logMessage(const std::string& message) {
-    mLogQueue.push(message);  //
-  }
+  // Get the current velocities (linear and angular)
+  float GetLinearVelocity() const {
+    return m_linearVelocity;  //
+  };
+  float GetAngularVelocity() const {
+    return m_angularVelocity;  //
+  };
 
-  void run() {
-    std::unique_lock<std::mutex> lock(mMutex);
-    mRunning = true;
-    logMessage("Starting my run!");
-    float radius = 300;
-    float cx = 400;
-    float cy = 400;
-    float angle = 0.0f;
-    while (mRunning) {
-      updateSensors();           // Notify for updated sensor readings
-      mConditionVar.wait(lock);  // Wait for sensor update notification
-      logMessage("Sensor data updated!");
-      /// Lets just move the robot in a circle for now.
-      float px = radius * cos(angle) + cx;
-      float py = radius * sin(angle) + cy;
-      angle += 0.1;
-      mRobot.GetModel().Move(px, py);
-
-      // Process sensor data
-      if (mSensorData.getFrontDistance() < 100) {
-        logMessage("Obstacle detected ahead!");
-        // Example: Stop robot if obstacle is too close
-        // mRobot.setInputVelocities(0.0, 0.0);
-      } else {
-        logMessage("Path ahead clear!");
-        // Example: Continue forward movement
-        // mRobot.setInputVelocities(0.2, 0.0);  // 0.2 m/s forward, no rotation
-      }
-
-      // Example: Update logical maze
-      // mMaze.updateFromSensors(mSensorData);
-      //      sleep(0.01);
-    }
-  }
-
-  sf::Vector2f getRobotPosition() {
-    std::lock_guard<std::mutex> lock(mMutex);
-    RobotModel::Pose pose = mRobot.GetModel().getPose();
-    return {pose.x, pose.y};
-  }
-
-  float getRobotOrientation() {
-    std::lock_guard<std::mutex> lock(mMutex);
-    RobotModel::Pose pose = mRobot.GetModel().getPose();
-    return pose.theta;
-  }
-
-  /// ensure we properly break the control loop
-  void requestStop() {
-    std::lock_guard<std::mutex> lock(mMutex);
-    mRunning = false;
-    mConditionVar.notify_all();
-  }
-
-  std::vector<int> getSensorReadings() {
-    std::lock_guard<std::mutex> lock(mMutex);
-    //    return mSensorData.getSensorReadings();
-    return {0, 0, 0, 0};
-  }
-
-  void updateSensors() {
-    std::lock_guard<std::mutex> lock(mMutex);
-    // Notify main thread to update sensor data
-    // Example: mMaze.updateSensorData(mRobot, mSensorData);
-    mConditionVar.notify_all();
+  // Set a circular trajectory for the robot
+  void SetCircularTrajectory(const sf::Vector2f& center, float radius, float angularSpeedDegrees) {
+    m_center = center;
+    m_radius = radius;
+    m_angularVelocity = angularSpeedDegrees;                              // Store angular speed in degrees per second
+    m_linearVelocity = radius * (m_angularVelocity * 3.14159f / 180.0f);  // Convert angular speed to radians for calculation
   }
 
  private:
-  Robot& mRobot;
-  Maze& mMaze;
-  SensorData& mSensorData;
-  bool mRunning;
-  std::mutex mMutex;
-  std::condition_variable mConditionVar;
-  ThreadSafeQueue& mLogQueue;
-#endif
+  // Current control outputs
+  float m_linearVelocity;   // Forward velocity (units per second)
+  float m_angularVelocity;  // Angular velocity (radians per second)
+  sf::Vector2f m_center;    // Center of the circular trajectory
+  float m_radius;           // Radius of the circular trajectory
 };
 
 #endif  // ROBOT_CONTROL_H
