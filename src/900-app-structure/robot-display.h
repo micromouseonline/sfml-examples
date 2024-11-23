@@ -47,78 +47,34 @@
 
 class RobotDisplay : IEventObserver {
  public:
-  RobotDisplay(sf::RenderWindow& window, RobotControl& robotControl, ThreadSafeQueue& logQueue)
-      : mRobotControl(robotControl), mWindow(window), mLogQueue(logQueue) {}
+  static void Draw(sf::RenderWindow& window, const sf::Vector2f& pose, float orientation) {
+    // Draw the robot as a circle
+    sf::CircleShape robotShape(ROBOT_RADIUS);
+    robotShape.setOrigin(ROBOT_RADIUS, ROBOT_RADIUS);  // Center the circle at its position
+    robotShape.setPosition(pose);
+    robotShape.setFillColor(sf::Color::Blue);  // Robot body color
 
-  void Update(float deltaTime) {
-    (void)deltaTime;
-    // what do we need to do here?
-    // update the sprite
-    // do the collision detection with the maze?
-  }
+    // Draw the robot's heading as a line
+    sf::VertexArray headingLine(sf::Lines, 2);
+    headingLine[0].position = pose;
+    headingLine[0].color = sf::Color::Red;  // Line starting point color
 
-  void Render() {
-    // Draw maze grid and walls (example)
-    // Assume mRobotControl.mMaze has a draw() method
-    //    mRobotControl.mMaze.draw(mWindow);
+    // Calculate the heading endpoint
+    headingLine[1].position = {pose.x + HEADING_LINE_LENGTH * std::cos(orientation), pose.y + HEADING_LINE_LENGTH * std::sin(orientation)};
+    headingLine[1].color = sf::Color::Red;  // Line endpoint color
 
-    // Draw the robot
-    // methods in the RobotControl class must be thread safe
-    sf::Vector2f robotPosition = mRobotControl.getRobotPosition();
-    sf::CircleShape robotShape(10);  // Represent the robot as a circle
+    // Render the robot
+    window.draw(robotShape);
 
-    robotShape.setPosition(robotPosition);
-    robotShape.setFillColor(sf::Color::Blue);
-    robotShape.setOrigin(10, 10);                                                     // Center origin for rotation
-    robotShape.setRotation(mRobotControl.getRobotOrientation() * 180.0f / 3.14159f);  // Convert radians to degrees
-    mWindow.draw(robotShape);
-    // TODO: this needs to point in the direction of travel
-    draw_line(mWindow, robotPosition, robotPosition + sf::Vector2f(10, 0), sf::Color::Yellow);
-    mRobotControl.updateSensors();
-  }
+    // Render the heading
+    window.draw(headingLine);
+  };
 
  private:
-  /// this needs to use the IEventHandler class because
-  /// events are collected and dispatched by the Window class
-  void OnEvent(const Event& event) override {
-    switch (event.type) {
-      case EventType::SFML_EVENT: {
-        sf::Event ev = event.event;
-        if (ev.type == sf::Event::KeyPressed) {
-          if (ev.key.code == sf::Keyboard::P) {  // Pause
-            mRobotControl.requestStop();
-          }
-          if (ev.key.code == sf::Keyboard::S) {  // Single step
-                                                 // Logic for stepping simulation
-          }
-          if (ev.key.code == sf::Keyboard::R) {  // Reset
-                                                 // Logic for resetting simulation
-          }
-        }
-        break;
-      }
-      case EventType::USER_EVENT:
+  static constexpr float ROBOT_RADIUS = 10.0f;         // Radius of the robot visualization
+  static constexpr float HEADING_LINE_LENGTH = 15.0f;  // Length of the heading line
 
-        break;
-      default:
-
-        break;
-    }
-  }
-
-  void displayLogMessages() {
-    std::string message;
-    while (mLogQueue.tryPop(message)) {  // Fetch message into the string
-      std::cout << message << std::endl;
-
-      // Optionally, render messages on the window
-    }
-  }
-
-  RobotControl& mRobotControl;
-  sf::RenderWindow& mWindow;
-  Maze mMaze;
-  ThreadSafeQueue& mLogQueue;
+ public:
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////

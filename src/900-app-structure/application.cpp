@@ -3,6 +3,23 @@
 //
 #include "application.h"
 
+Application::Application()
+    : m_window("Application", sf::Vector2u(800, 600)), m_elapsed(sf::Time::Zero), mStatisticsNumFrames(0), mStatisticsUpdateTime(sf::Time::Zero), m_robot() {
+  RestartClock();
+  m_elapsed = sf::Time::Zero;
+  mStatisticsNumFrames = 0;
+  mStatisticsUpdateTime = sf::Time::Zero;
+
+  m_textbox.Setup(5, 12, 300, sf::Vector2f(450, 10));
+  m_textbox.Add("Hello World!");
+  m_window.AddObserver(this);
+  m_robot.Start();
+}
+
+Application::~Application() {
+  m_robot.Stop();  // Ensure the robot thread stops
+}
+
 void Application::OnEvent(const Event& event) {
   switch (event.type) {
     case EventType::SFML_EVENT:
@@ -26,6 +43,12 @@ void Application::Render() {
   sf::RenderWindow& window = *m_window.GetRenderWindow();
   draw_line(window, {40, 90}, mp, sf::Color::Red);
   m_textbox.Render(window);
+
+  // Draw the robot using RobotDisplay
+  sf::Vector2f pose = m_robot.GetPose();
+  float orientation = m_robot.GetOrientation();
+  RobotDisplay::Draw(*m_window.GetRenderWindow(), pose, orientation);
+
   m_window.EndDraw();
 }
 
@@ -36,9 +59,16 @@ void Application::HandleInput() {
     m_textbox.Add(msg);
   }
 }
+
 void Application::Update(sf::Time deltaTime) {
   m_window.Update();  // call this first to process window events
   m_elapsed += deltaTime;
+  // Update sensor data for the robot
+  {
+    std::lock_guard<std::mutex> lock(m_sensorDataMutex);
+    //    m_sensorData = {0,0,0};// Generate new sensor data based on the environment
+  }
+  m_robot.UpdateSensors(m_sensorData);
 }
 
 void Application::Run() {
@@ -48,15 +78,6 @@ void Application::Run() {
     Render();
     RestartClock();
   }
-}
-
-Application::Application() : m_window("Application", sf::Vector2u(800, 600)) {
-  RestartClock();
-  m_elapsed = sf::Time::Zero;
-  srand(time(nullptr));  // just the simple random number seed;
-  m_textbox.Setup(5, 12, 300, sf::Vector2f(450, 10));
-  m_textbox.Add("Hello World!");
-  m_window.AddObserver(this);
 }
 
 void Application::UpdateStatistics(sf::Time elapsedTime) {

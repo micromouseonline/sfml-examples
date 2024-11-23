@@ -48,12 +48,18 @@
 #include <condition_variable>
 #include <mutex>
 #include "maze.h"
-#include "robot.h"
+// #include "robot.h"
 #include "sensor-data.h"
 #include "thread-safe-queue.h"
 
 class RobotControl {
  public:
+  void (*run)(void*);
+  void Update(SensorData& data) {}
+#if 0
+  /// You can only create a controller once there is a robot and so on
+  RobotControl() = delete;
+
   RobotControl(Robot& robot, Maze& maze, SensorData& sensorData, ThreadSafeQueue& logQueue)
       : mRobot(robot), mMaze(maze), mSensorData(sensorData), mRunning(false), mLogQueue(logQueue) {
     //
@@ -138,6 +144,7 @@ class RobotControl {
   std::mutex mMutex;
   std::condition_variable mConditionVar;
   ThreadSafeQueue& mLogQueue;
+#endif
 };
 
 #endif  // ROBOT_CONTROL_H

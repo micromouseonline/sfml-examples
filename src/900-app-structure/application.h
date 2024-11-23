@@ -24,7 +24,7 @@ class Application : public IEventObserver {
   Application();
   ;
 
-  ~Application() = default;
+  ~Application();
 
   void Run();
   ;
@@ -69,12 +69,14 @@ class Application : public IEventObserver {
   sf::Clock m_clock;
   sf::Time m_elapsed;
 
-  sf::Font mFont;
+  //  sf::Font mFont;
   sf::Text mStatisticsText;
   sf::Time mStatisticsUpdateTime;
   Textbox m_textbox;
+  Robot m_robot;                 // The robot instance
+  std::mutex m_sensorDataMutex;  // Protects sensor data updates
+  SensorData m_sensorData;       // Current sensor data for the robot
 
-  Robot m_robot;
   std::size_t mStatisticsNumFrames;
 };
 

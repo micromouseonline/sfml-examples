@@ -4,4 +4,6 @@ target_sources(${APP} PRIVATE
         main.cpp
         window.cpp
         application.cpp
+        robot.cpp
+        robot-control.cpp
 )

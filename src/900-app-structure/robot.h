@@ -6,27 +6,50 @@
 #define ROBOT_H
 
 #include <SFML/Graphics.hpp>
+#include <thread>
 #include "collision-object.h"
+#include "robot-control.h"
 #include "robot-model.h"
+#include "sensor-data.h"
 #include "sensor.h"
 
 /***
- * this is the main robot class.
- * Is it an unnecessary indirection?
- * Could/should all the robot behaviour be in one class?
- *
- * The robot will have the sensors and  the collision geometry
+ * This is the robot class.
  */
 class Robot {
  public:
-  Robot() {
-    // create the robot
-  }
+  Robot();
+  ~Robot();
 
-  RobotModel& GetModel() { return m_model; }
+  // Starts the robot in its own thread
+  void Start();
+
+  // Stops the robot's thread
+  void Stop();
+
+  // Accessors for robot state (thread-safe)
+  sf::Vector2f GetPose() const;  // Returns (x, y) position
+  float GetOrientation() const;  // Returns orientation in radians
+
+  // Provides the robot with updated sensor data
+  void UpdateSensors(const SensorData& sensorData);
 
  private:
-  RobotModel m_model;
-  CollisionGeometry m_robot_body;
+  // Main loop executed in the robot thread
+  void Run();
+
+  // Low-level control methods
+  void UpdateState();
+  void ProcessControl();
+
+  std::thread m_thread;
+  std::atomic<bool> m_running;  // Thread control flag
+  sf::Vector2f m_pose;          // (x, y) position
+  float m_orientation;          // Orientation in radians
+
+  mutable std::mutex m_stateMutex;  // Protects access to m_pose and m_orientation
+  SensorData m_sensorData;          // Current sensor readings
+  RobotControl m_control;           // Higher-level control logic
 };
+
 #endif  // ROBOT_H
