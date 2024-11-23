@@ -38,6 +38,19 @@ void Application::OnEvent(const Event& event) {
   }
 }
 
+void Application::Update(sf::Time deltaTime) {
+  m_window.Update();  // call this first to process window events
+  std::string msg = "Millis: " + std::to_string(m_robot.millis());
+  m_textbox.Add(msg);
+  m_elapsed += deltaTime;
+  // Update sensor data for the robot
+  {
+    std::lock_guard<std::mutex> lock(m_sensorDataMutex);
+    //    m_sensorData = {0,0,0};// Generate new sensor data based on the environment
+  }
+  m_robot.UpdateSensors(m_sensorData);
+}
+
 void Application::Render() {
   m_window.BeginDraw();
   sf::RenderWindow& window = *m_window.GetRenderWindow();
@@ -58,17 +71,6 @@ void Application::HandleInput() {
     std::string msg = "Left Mouse button pressed";
     m_textbox.Add(msg);
   }
-}
-
-void Application::Update(sf::Time deltaTime) {
-  m_window.Update();  // call this first to process window events
-  m_elapsed += deltaTime;
-  // Update sensor data for the robot
-  {
-    std::lock_guard<std::mutex> lock(m_sensorDataMutex);
-    //    m_sensorData = {0,0,0};// Generate new sensor data based on the environment
-  }
-  m_robot.UpdateSensors(m_sensorData);
 }
 
 void Application::Run() {

@@ -58,6 +58,7 @@ class RobotControl {
 
   // Updates the control logic with the current sensor data
   void Update(const SensorData& sensorData) {
+    (void)sensorData;
     // nothing happens based on sensor datain this test
   };
 

@@ -17,20 +17,33 @@ void Robot::Start() {
   if (!m_running) {
     m_running = true;
     m_thread = std::thread(&Robot::Run, this);
+    m_systick_thread = std::thread([this]() {
+      while (m_running) {
+        systick();
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+      }
+    });
   }
 }
 
 void Robot::Stop() {
   if (m_running) {
     m_running = false;
+    if (m_systick_thread.joinable()) {
+      m_systick_thread.join();
+    }
     if (m_thread.joinable()) {
       m_thread.join();
     }
   }
 }
 
+void Robot::systick() {
+  ticks++;
+}
+
 void Robot::Run() {
-  /// for testing, just have the robot run around in a circle.
+  /// TODO: for testing, just have the robot run around in a circle.
   const sf::Vector2f initialCenter(300.0f, 300.0f);  // Center of the circle
   const float initialRadius = 100.0f;                // Radius of the circle
   const float initialAngularSpeed = 60.0f;           // Degrees per second
@@ -46,7 +59,6 @@ void Robot::Run() {
     // Get the velocities from the RobotControl class
     float linearVelocity = m_control.GetLinearVelocity();
     float angularVelocity = m_control.GetAngularVelocity();
-    //    angularVelocity = 60.0f;
 
     {
       std::lock_guard<std::mutex> lock(m_stateMutex);
@@ -92,6 +104,12 @@ float Robot::GetOrientation() const {
 }
 
 void Robot::UpdateSensors(const SensorData& sensorData) {
+  (void)sensorData;
   // Update sensor data (thread-safe mechanism if needed)
   //  m_sensorData = sensorData;
+}
+uint32_t Robot::millis() {
+  std::lock_guard<std::mutex> lock(m_stateMutex);
+  return ticks;
+  ;
 }

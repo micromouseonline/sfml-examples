@@ -34,6 +34,14 @@ class Robot {
   // Provides the robot with updated sensor data
   void UpdateSensors(const SensorData& sensorData);
 
+  void StartSystick();
+
+  void StopSystick();
+
+  void systick();
+
+  uint32_t millis();
+
  private:
   // Main loop executed in the robot thread
   void Run();
@@ -41,7 +49,12 @@ class Robot {
   // Low-level control methods
   void UpdateState();
   void ProcessControl();
-
+  float lfs = 0.0f;
+  float lds = 0.0f;
+  float rds = 0.0f;
+  float rfs = 0.0f;
+  uint32_t ticks = 0;
+  std::thread m_systick_thread;
   std::thread m_thread;
   std::atomic<bool> m_running;  // Thread control flag
   sf::Vector2f m_pose;          // (x, y) position
