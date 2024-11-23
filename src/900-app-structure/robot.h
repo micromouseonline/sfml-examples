@@ -13,6 +13,9 @@
 #include "sensor-data.h"
 #include "sensor.h"
 
+/// forward declarations
+class Application;
+
 /***
  * This is the robot class.
  */
@@ -22,7 +25,7 @@ class Robot {
   ~Robot();
 
   // Starts the robot in its own thread
-  void Start();
+  void Start(Application *app);
 
   // Stops the robot's thread
   void Stop();
@@ -31,8 +34,11 @@ class Robot {
   sf::Vector2f GetPose() const;  // Returns (x, y) position
   float GetOrientation() const;  // Returns orientation in radians
 
-  // Provides the robot with updated sensor data
-  void UpdateSensors(const SensorData& sensorData);
+  // This must request sensor data from the Application
+  void ReadSensorValues();
+
+  /// A getter for the Robot's sensor values
+  SensorValues &GetSensorValues();
 
   void StartSystick();
 
@@ -60,9 +66,10 @@ class Robot {
   sf::Vector2f m_pose;          // (x, y) position
   float m_orientation;          // Orientation in radians
 
-  mutable std::mutex m_stateMutex;  // Protects access to m_pose and m_orientation
-  SensorData m_sensorData;          // Current sensor readings
-  RobotControl m_control;           // Higher-level control logic
+  mutable std::mutex m_stateMutex;       // Protects access to m_pose and m_orientation
+  SensorValues m_sensorValues;           // Current sensor readings
+  RobotControl m_control;                // Higher-level control logic
+  Application *m_application = nullptr;  // Pointer to the Application (for querying sensor readings)
 };
 
 #endif  // ROBOT_H

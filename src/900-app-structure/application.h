@@ -60,7 +60,11 @@ class Application : public IEventObserver {
   /// This would be a good place to create any overlay information or to log
   /// performance data for example.
   void UpdateStatistics(sf::Time elapsedTime);
-  ;
+
+  void CalculateSensorValues();
+
+  /// the robot calls this to get new sensor values
+  SensorValues& GetSensorValues();
 
  private:
   sf::Vector2f mp = {0, 0};
@@ -75,9 +79,7 @@ class Application : public IEventObserver {
   Textbox m_textbox;
   Robot m_robot;                 // The robot instance
   std::mutex m_sensorDataMutex;  // Protects sensor data updates
-  SensorData m_sensorData;       // Current sensor data for the robot
-
-  std::size_t mStatisticsNumFrames;
+  SensorValues m_sensorValues;   // Current sensor reading that are read by robot
 };
 
 #endif  // APPLICATION_H

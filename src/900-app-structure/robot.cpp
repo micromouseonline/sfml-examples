@@ -5,6 +5,7 @@
 #include "robot.h"
 #include <iostream>
 #include <thread>
+#include "application.h"
 
 Robot::Robot() : m_running(false), m_pose(300.0f, 300.0f), m_orientation(0.0f) {
 }
@@ -13,8 +14,9 @@ Robot::~Robot() {
   Stop();
 }
 
-void Robot::Start() {
+void Robot::Start(Application* app) {
   if (!m_running) {
+    m_application = app;
     m_running = true;
     m_thread = std::thread(&Robot::Run, this);
     m_systick_thread = std::thread([this]() {
@@ -40,6 +42,7 @@ void Robot::Stop() {
 
 void Robot::systick() {
   ticks++;
+  ReadSensorValues();
 }
 
 void Robot::Run() {
@@ -90,7 +93,7 @@ void Robot::UpdateState() {
 
 void Robot::ProcessControl() {
   // Call RobotControl to compute control actions based on the sensor data
-  m_control.Update(m_sensorData);
+  m_control.Update(m_sensorValues);
 }
 
 sf::Vector2f Robot::GetPose() const {
@@ -103,11 +106,17 @@ float Robot::GetOrientation() const {
   return m_orientation;
 }
 
-void Robot::UpdateSensors(const SensorData& sensorData) {
-  (void)sensorData;
-  // Update sensor data (thread-safe mechanism if needed)
-  //  m_sensorData = sensorData;
+void Robot::ReadSensorValues() {
+  if (m_application) {
+    m_sensorValues = m_application->GetSensorValues();
+  }
 }
+
+SensorValues& Robot::GetSensorValues() {
+  std::lock_guard<std::mutex> lock(m_stateMutex);
+  return m_sensorValues;
+}
+
 uint32_t Robot::millis() {
   std::lock_guard<std::mutex> lock(m_stateMutex);
   return ticks;

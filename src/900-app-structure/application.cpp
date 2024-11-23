@@ -3,17 +3,15 @@
 //
 #include "application.h"
 
-Application::Application()
-    : m_window("Application", sf::Vector2u(800, 600)), m_elapsed(sf::Time::Zero), mStatisticsNumFrames(0), mStatisticsUpdateTime(sf::Time::Zero), m_robot() {
+Application::Application() : m_window("Application", sf::Vector2u(800, 600)), m_elapsed(sf::Time::Zero), mStatisticsUpdateTime(sf::Time::Zero), m_robot() {
   RestartClock();
   m_elapsed = sf::Time::Zero;
-  mStatisticsNumFrames = 0;
   mStatisticsUpdateTime = sf::Time::Zero;
 
   m_textbox.Setup(5, 12, 300, sf::Vector2f(450, 10));
   m_textbox.Add("Hello World!");
   m_window.AddObserver(this);
-  m_robot.Start();
+  m_robot.Start(this);
 }
 
 Application::~Application() {
@@ -40,15 +38,15 @@ void Application::OnEvent(const Event& event) {
 
 void Application::Update(sf::Time deltaTime) {
   m_window.Update();  // call this first to process window events
-  std::string msg = "Millis: " + std::to_string(m_robot.millis());
-  m_textbox.Add(msg);
   m_elapsed += deltaTime;
   // Update sensor data for the robot
-  {
-    std::lock_guard<std::mutex> lock(m_sensorDataMutex);
-    //    m_sensorData = {0,0,0};// Generate new sensor data based on the environment
-  }
-  m_robot.UpdateSensors(m_sensorData);
+  CalculateSensorValues();
+  // now read back what the robot sees
+  SensorValues sensors = m_robot.GetSensorValues();
+  char str[100];
+  sprintf(str, "%4d %4d %4d %4d ", (int)sensors.lfs_value, (int)sensors.lds_value, (int)sensors.rds_value, (int)sensors.rfs_value);
+  std::string msg = std::to_string(sensors.lfs_value) + " " + std::to_string(sensors.rfs_value);
+  m_textbox.Add(str);
 }
 
 void Application::Render() {
@@ -97,4 +95,25 @@ sf::Time Application::GetElapsed() {
 
 void Application::RestartClock() {
   m_clock.restart();  //
+}
+
+void Application::CalculateSensorValues() {
+  uint32_t ticks = m_robot.millis();
+  /// just modify the sensor values a bit to see that they change
+  float v = 50.0f + (ticks % 1000) / 10.0f;
+  {
+    std::lock_guard<std::mutex> lock(m_sensorDataMutex);
+    m_sensorValues.lfs_value = v;
+    m_sensorValues.rfs_value = v;
+    m_sensorValues.lds_value = v;
+    m_sensorValues.rds_value = v;
+    m_sensorValues.lfs_dist = sqrtf(v);
+    m_sensorValues.rfs_dist = sqrtf(v);
+    m_sensorValues.lds_dist = sqrtf(v);
+    m_sensorValues.rds_dist = sqrtf(v);
+  }
+}
+
+SensorValues& Application::GetSensorValues() {
+  return m_sensorValues;
 }

@@ -57,8 +57,8 @@ class RobotControl {
   RobotControl() : m_linearVelocity(0.0f), m_angularVelocity(0.0f), m_center(0.0f, 0.0f), m_radius(0.0f){};
 
   // Updates the control logic with the current sensor data
-  void Update(const SensorData& sensorData) {
-    (void)sensorData;
+  void Update(const SensorValues& sensorValues) {
+    (void)sensorValues;
     // nothing happens based on sensor datain this test
   };
 
