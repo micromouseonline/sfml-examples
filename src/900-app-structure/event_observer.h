@@ -14,8 +14,9 @@
  * crash might notify the main thread to stop the simulation.
  */
 enum EventType {
-  SFML_EVENT,  // Any of the built-in SFML events
-  USER_EVENT,  // a place holder as a reminder other types are possible
+  SFML_EVENT,   // Any of the built-in SFML events
+  USER_EVENT,   // a place holder as a reminder other types are possible
+  ROBOT_EVENT,  //
 };
 
 /***

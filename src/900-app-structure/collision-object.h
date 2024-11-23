@@ -16,7 +16,7 @@ class CollisionGeometry {
     sf::Vector2f rotatedOffset;
   };
 
-  explicit CollisionGeometry(const sf::Vector2f& center) : m_center(center) { m_colour = sf::Color::White; }
+  explicit CollisionGeometry(const sf::Vector2f& center = {0, 0}) : m_center(center) { m_colour = sf::Color::White; }
 
   void addShape(std::unique_ptr<sf::Shape> shape, const sf::Vector2f& offset) {
     shape->setPosition(m_center + offset);

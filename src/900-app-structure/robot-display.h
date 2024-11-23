@@ -9,6 +9,7 @@
 #include <iostream>
 #include <mutex>
 #include <optional>
+#include "event_observer.h"
 #include "robot-control.h"
 #include "robot.h"
 #include "thread-safe-queue.h"
@@ -18,7 +19,7 @@
  * user interaction - for instance, starting, stopping, stepping,
  * mode changes...
  *
- * Instances of this class will run in the main application thread. adn so it
+ * Instances of this class will run in the main application thread and so it
  * must be made thread safe.
  *
  * To communicate with the RobotControl class, shared variables must be used
@@ -40,55 +41,23 @@
  * Simulation Control:
  *    - Provide an interface for controlling the simulation (e.g., play/pause, reset, or single-step mode).
  *
- *
+ * The RobotDisplay runs in the main application thread.
  *
  */
 
-/// FIXME: Sample code by CoPilot
-class RobotDisplay {
+class RobotDisplay : IEventObserver {
  public:
   RobotDisplay(RobotControl& robotControl, sf::RenderWindow& window, ThreadSafeQueue& logQueue)
       : mRobotControl(robotControl), mWindow(window), mLogQueue(logQueue) {}
 
-  void run() {
-    while (mWindow.isOpen()) {
-      handleEvents();
-      render();
-      displayLogMessages();  // Show log messages
-    }
+  void Update(float deltaTime) {
+    (void)deltaTime;
+    // what do we need to do here?
+    // update the sprite
+    // do the collision detection with the maze?
   }
 
- private:
-  RobotControl& mRobotControl;
-  sf::RenderWindow& mWindow;
-  Maze mMaze;
-  ThreadSafeQueue& mLogQueue;
-
-  void handleEvents() {
-    sf::Event event;
-    while (mWindow.pollEvent(event)) {
-      if (event.type == sf::Event::Closed) {
-        mWindow.close();
-      }
-
-      // Example: Handle key presses
-      if (event.type == sf::Event::KeyPressed) {
-        if (event.key.code == sf::Keyboard::P) {  // Pause
-          mRobotControl.requestStop();
-        }
-        if (event.key.code == sf::Keyboard::S) {  // Single step
-                                                  // Logic for stepping simulation
-        }
-        if (event.key.code == sf::Keyboard::R) {  // Reset
-                                                  // Logic for resetting simulation
-        }
-      }
-    }
-  }
-
-  void render() {
-    mWindow.clear();
-
+  void Render() {
     // Draw maze grid and walls (example)
     // Assume mRobotControl.mMaze has a draw() method
     //    mRobotControl.mMaze.draw(mWindow);
@@ -104,8 +73,40 @@ class RobotDisplay {
       mWindow.draw(robotShape);
       mRobotControl.updateSensors();
     }
+  }
 
-    mWindow.display();
+ private:
+  RobotControl& mRobotControl;
+  sf::RenderWindow& mWindow;
+  Maze mMaze;
+  ThreadSafeQueue& mLogQueue;
+
+  /// this needs to use the IEventHandler class because
+  /// events are collected and dispatched by the Window class
+  void OnEvent(const Event& event) override {
+    switch (event.type) {
+      case EventType::SFML_EVENT: {
+        sf::Event ev = event.event;
+        if (ev.type == sf::Event::KeyPressed) {
+          if (ev.key.code == sf::Keyboard::P) {  // Pause
+            mRobotControl.requestStop();
+          }
+          if (ev.key.code == sf::Keyboard::S) {  // Single step
+                                                 // Logic for stepping simulation
+          }
+          if (ev.key.code == sf::Keyboard::R) {  // Reset
+                                                 // Logic for resetting simulation
+          }
+        }
+        break;
+      }
+      case EventType::USER_EVENT:
+
+        break;
+      default:
+
+        break;
+    }
   }
 
   void displayLogMessages() {
@@ -120,6 +121,9 @@ class RobotDisplay {
 
 ////////////////////////////////////////////////////////////////////////////////////////
 #if 0
+
+Stuff from the current visual representation
+
 class RobotDisplayView {
  public:
   RobotDisplayView(Robot& robot) : m_robot(robot) {

@@ -24,19 +24,22 @@
  *
  * Core Features of RobotControl
  * Behavioral Logic:
- * Implements decision-making algorithms such as path planning, mapping, and navigation.
- * Reacts to sensor data (e.g., front distance, wall proximity) for obstacle avoidance or exploration.
- * Synchronization:
- *    Uses a std::condition_variable to coordinate updates between threads:
- *    Notifies the RobotDisplay thread to update sensor data.
- *    Waits for the updated data to proceed with control logic.
- * Robot Interaction:
- *    Directly interacts with the Robot instance to access pose, velocity, or other state data.
- * Environment Access:
- *    Maintains a reference to a Maze object, which represents the logical environment
- *    for pathfinding and navigation.
+ *    - Implements decision-making algorithms such as path planning, mapping, and navigation.
+ *    - Reacts to sensor data (e.g., front distance, wall proximity) for obstacle avoidance or exploration.
  *
- * mRobot, mMaze and mSensorData should be private members of RobotControl accessed
+ * Synchronization:
+ *    - Uses a std::condition_variable to coordinate updates between threads:
+ *    - Notifies the RobotDisplay thread to update sensor data.
+ *    - Waits for the updated data to proceed with control logic.
+ *
+ * Robot Interaction:
+ *    - Directly interacts with the Robot instance to access pose, velocity, or other state data.
+ *
+ * Environment Access:
+ *    - Maintains a reference to a Maze object, which represents the logical environment
+ *      for pathfinding and navigation.
+ *
+ * mRobot, mMaze and mSensorData are private members of RobotControl accessed
  * through methods that ensure thread safety
  *
  */
@@ -48,13 +51,16 @@
 #include "sensor-data.h"
 #include "thread-safe-queue.h"
 
-/// FIXME: Sample code by CoPilot
 class RobotControl {
  public:
   RobotControl(Robot& robot, Maze& maze, SensorData& sensorData, ThreadSafeQueue& logQueue)
-      : mRobot(robot), mMaze(maze), mSensorData(sensorData), mRunning(false), mLogQueue(logQueue) {}
+      : mRobot(robot), mMaze(maze), mSensorData(sensorData), mRunning(false), mLogQueue(logQueue) {
+    //
+  }
 
-  void logMessage(const std::string& message) { mLogQueue.push(message); }
+  void logMessage(const std::string& message) {
+    mLogQueue.push(message);  //
+  }
 
   void run() {
     std::unique_lock<std::mutex> lock(mMutex);
@@ -82,10 +88,16 @@ class RobotControl {
     }
   }
 
-  sf::Vector2f getRobotPosition() const { return mRobot.getPosition(); }
+  sf::Vector2f getRobotPosition() {
+    std::lock_guard<std::mutex> lock(mMutex);
+    RobotModel::Pose pose = mRobot.GetModel().getPose();
+    return {pose.x, pose.y};
+  }
+
   float getRobotOrientation() {
     std::lock_guard<std::mutex> lock(mMutex);
-    return mRobot.getOrientation();
+    RobotModel::Pose pose = mRobot.GetModel().getPose();
+    return pose.theta;
   }
 
   /// ensure we properly break the control loop

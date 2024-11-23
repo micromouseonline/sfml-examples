@@ -13,6 +13,7 @@
 #include "maze.h"
 #include "robot-control.h"
 #include "robot-display.h"
+#include "robot-model.h"
 #include "robot.h"
 #include "sensor-data.h"
 #include "textbox.h"
@@ -107,6 +108,7 @@ class Application : public IEventObserver {
   /// This would be a good place to create any overlay information or to log
   /// performance data for example.
   void UpdateStatistics(sf::Time elapsedTime) {
+    (void)(elapsedTime);
     //
   };
 
@@ -121,6 +123,8 @@ class Application : public IEventObserver {
   sf::Text mStatisticsText;
   sf::Time mStatisticsUpdateTime;
   Textbox m_textbox;
+
+  Robot m_robot;
   std::size_t mStatisticsNumFrames;
 };
 
