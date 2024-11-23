@@ -40,7 +40,8 @@
  *      for pathfinding and navigation.
  *
  * mRobot, mMaze and mSensorData are private members of RobotControl accessed
- * through methods that ensure thread safety
+ * through methods that ensure thread safety. RobotControl manages all synchronization
+ * between threads.
  *
  */
 
@@ -66,11 +67,19 @@ class RobotControl {
     std::unique_lock<std::mutex> lock(mMutex);
     mRunning = true;
     logMessage("Starting my run!");
-
+    float radius = 300;
+    float cx = 400;
+    float cy = 400;
+    float angle = 0.0f;
     while (mRunning) {
       updateSensors();           // Notify for updated sensor readings
       mConditionVar.wait(lock);  // Wait for sensor update notification
       logMessage("Sensor data updated!");
+      /// Lets just move the robot in a circle for now.
+      float px = radius * cos(angle) + cx;
+      float py = radius * sin(angle) + cy;
+      angle += 0.1;
+      mRobot.GetModel().Move(px, py);
 
       // Process sensor data
       if (mSensorData.getFrontDistance() < 100) {
@@ -85,6 +94,7 @@ class RobotControl {
 
       // Example: Update logical maze
       // mMaze.updateFromSensors(mSensorData);
+      //      sleep(0.01);
     }
   }
 

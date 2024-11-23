@@ -47,7 +47,7 @@
 
 class RobotDisplay : IEventObserver {
  public:
-  RobotDisplay(RobotControl& robotControl, sf::RenderWindow& window, ThreadSafeQueue& logQueue)
+  RobotDisplay(sf::RenderWindow& window, RobotControl& robotControl, ThreadSafeQueue& logQueue)
       : mRobotControl(robotControl), mWindow(window), mLogQueue(logQueue) {}
 
   void Update(float deltaTime) {
@@ -63,24 +63,21 @@ class RobotDisplay : IEventObserver {
     //    mRobotControl.mMaze.draw(mWindow);
 
     // Draw the robot
-    {
-      sf::Vector2f robotPosition = mRobotControl.getRobotPosition();
-      sf::CircleShape robotShape(10);  // Represent the robot as a circle
-      robotShape.setPosition(robotPosition);
-      robotShape.setFillColor(sf::Color::Blue);
-      robotShape.setOrigin(10, 10);                                                     // Center origin for rotation
-      robotShape.setRotation(mRobotControl.getRobotOrientation() * 180.0f / 3.14159f);  // Convert radians to degrees
-      mWindow.draw(robotShape);
-      mRobotControl.updateSensors();
-    }
+    // methods in the RobotControl class must be thread safe
+    sf::Vector2f robotPosition = mRobotControl.getRobotPosition();
+    sf::CircleShape robotShape(10);  // Represent the robot as a circle
+
+    robotShape.setPosition(robotPosition);
+    robotShape.setFillColor(sf::Color::Blue);
+    robotShape.setOrigin(10, 10);                                                     // Center origin for rotation
+    robotShape.setRotation(mRobotControl.getRobotOrientation() * 180.0f / 3.14159f);  // Convert radians to degrees
+    mWindow.draw(robotShape);
+    // TODO: this needs to point in the direction of travel
+    draw_line(mWindow, robotPosition, robotPosition + sf::Vector2f(10, 0), sf::Color::Yellow);
+    mRobotControl.updateSensors();
   }
 
  private:
-  RobotControl& mRobotControl;
-  sf::RenderWindow& mWindow;
-  Maze mMaze;
-  ThreadSafeQueue& mLogQueue;
-
   /// this needs to use the IEventHandler class because
   /// events are collected and dispatched by the Window class
   void OnEvent(const Event& event) override {
@@ -117,6 +114,11 @@ class RobotDisplay : IEventObserver {
       // Optionally, render messages on the window
     }
   }
+
+  RobotControl& mRobotControl;
+  sf::RenderWindow& mWindow;
+  Maze mMaze;
+  ThreadSafeQueue& mLogQueue;
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////
