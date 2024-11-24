@@ -59,13 +59,12 @@ void Application::Update(sf::Time deltaTime) {
   char str[100];
   sprintf(str, "%4d %4d %4d %4d ", (int)sensors.lfs_value, (int)sensors.lds_value, (int)sensors.rds_value, (int)sensors.rfs_value);
   std::string msg = std::to_string(sensors.lfs_value) + " " + std::to_string(sensors.rfs_value);
-  m_textbox.Add(str);
+  //  m_textbox.Add(str);
 }
 
 void Application::Render() {
   /// ALWAYS do this first
   m_window.BeginDraw();
-
   // grab the window reference to save typing
   sf::RenderWindow& window = *m_window.GetRenderWindow();
 
@@ -87,6 +86,7 @@ void Application::Render() {
   // it could be a path to the goal, overlaid telemetry
   // flooding values, highlight to current target
   // use your imagination.
+
   /// ALWAYS do this last
   m_window.EndDraw();
 }

@@ -20,6 +20,7 @@ const int NUMBER_OF_VERT_WALLS = (NODES_PER_VERT_WALL_ROW + 2);
 const int NUMBER_OF_HORIZ_WALL_ROWS = (MAZE_WIDTH + 1);
 const int NUMBER_OF_VERT_WALL_ROWS = (MAZE_WIDTH);
 const int NUMBER_OF_WALLS = ((NUMBER_OF_HORIZ_WALLS * NUMBER_OF_HORIZ_WALL_ROWS) + (NUMBER_OF_VERT_WALLS * NUMBER_OF_VERT_WALL_ROWS));
+const int NUMBER_OF_POSTS = (MAZE_WIDTH + 1) * (MAZE_WIDTH + 1);
 
 const int LOCATION_DELTA_NORTH = (MAZE_WIDTH * 2 + 1);
 const int LOCATION_DELTA_NORTH_EAST = (MAZE_WIDTH + 1);
@@ -30,8 +31,8 @@ const int LOCATION_DELTA_SOUTH_WEST = (-(MAZE_WIDTH + 1));
 const int LOCATION_DELTA_WEST = (-1);
 const int LOCATION_DELTA_NORTH_WEST = (MAZE_WIDTH);
 
-const float WALL_THICKNESS = (12.0f * 16.0f / MAZE_WIDTH);
-const float WALL_LENGTH = (166.0f * 16.0f / MAZE_WIDTH);
+const float WALL_THICKNESS = int(12.0f * 16.0f / MAZE_WIDTH);
+const float WALL_LENGTH = int(166.0f * 16.0f / MAZE_WIDTH);
 const float CELL_SIZE = ((180.0 * 16.0f) / MAZE_WIDTH);
 
 enum class WallState {
@@ -80,8 +81,8 @@ class MazeManager {
   /// these constants are mostly needed for testing
 
   MazeManager() {
-    // TODO: ADD the posts
     InitMaze();  //
+    InitPosts();
   };
 
   ~MazeManager() = default;
@@ -182,6 +183,20 @@ class MazeManager {
     SetWallState(index, state);
   }
 
+  void InitPosts() {
+    // the posts are static so just make them once
+    for (int y = 0; y <= MAZE_WIDTH; y++) {
+      for (int x = 0; x <= MAZE_WIDTH; x++) {
+        float left = 25.0f + x * CELL_SIZE;
+        float top = 25.0f + (CELL_SIZE * MAZE_WIDTH) - (float)(y)*CELL_SIZE;
+
+        sf::Rect<float> post_rect(left, top, WALL_THICKNESS - 1, WALL_THICKNESS - 1);
+        int index = x * (MAZE_WIDTH + 1) + y;
+        m_posts[index] = post_rect;
+      }
+    }
+    m_vertexArrayPosts = MakeVertexArray(m_posts, sf::Color::Red);
+  }
   void InitMaze() {
     for (int y = 0; y < MAZE_WIDTH; y++) {
       for (int x = 0; x < MAZE_WIDTH; x++) {
@@ -214,13 +229,80 @@ class MazeManager {
     base.setFillColor(sf::Color(30, 30, 30, 64));
     window.draw(base);
 
-    for (int i = 0; i < NUMBER_OF_WALLS; i++) {
-      window.draw(m_walls[i].shape);
-    }
+    m_vertexArrayWalls = MakeVertexArrayFromWalls(m_walls);  // do this only when maze changes state
+    window.draw(m_vertexArrayWalls);
+    window.draw(m_vertexArrayPosts);
   }
 
  private:
+  /***
+   * This utility will take a list of float rectangles (should be ints?) and create a vertex array
+   * for faster rendering.
+   *
+   * I think all the walls need to go in one list and all the posts in another list. The posts are
+   * static and never change so it can be done once..
+   * The walls are dynamic and need to be updated whenever they change.
+   *
+   * @param rects
+   * @param color
+   * @return
+   */
+  //    sf::VertexArray MakeVertexArray(const std::vector<sf::Rect<float>>& rects, const sf::Color& color = sf::Color::Red) {
+  sf::VertexArray MakeVertexArray(const sf::Rect<float>* rects, const sf::Color& color = sf::Color::Red) {
+    sf::VertexArray vertexArray(sf::Quads, NUMBER_OF_POSTS * 4);
+
+    for (std::size_t i = 0; i < NUMBER_OF_POSTS; ++i) {
+      const sf::Rect<float>& rect = rects[i];
+      float left = rect.left;
+      float top = rect.top;
+      vertexArray[i * 4 + 0].position = sf::Vector2f(left, top);
+      vertexArray[i * 4 + 1].position = sf::Vector2f(left + rect.width, top);
+      vertexArray[i * 4 + 2].position = sf::Vector2f(left + rect.width, top + rect.height);
+      vertexArray[i * 4 + 3].position = sf::Vector2f(left, top + rect.height);
+
+      vertexArray[i * 4 + 0].color = color;
+      vertexArray[i * 4 + 1].color = color;
+      vertexArray[i * 4 + 2].color = color;
+      vertexArray[i * 4 + 3].color = color;
+    }
+
+    return vertexArray;
+  }
+
+  /***
+   * While waiting to convert the walls/posts to plain rectangles, we need to make
+   * a vertex array from the vector of walls that we have now.
+   *
+   * This method does that.
+   */
+  //  sf::VertexArray MakeVertexArrayFromShapes(const std::vector<sf::RectangleShape>& shapes) {
+  sf::VertexArray MakeVertexArrayFromWalls(const Wall* walls) {
+    sf::VertexArray vertexArray(sf::Quads, NUMBER_OF_WALLS * 4);
+
+    for (std::size_t i = 0; i < NUMBER_OF_WALLS; ++i) {
+      const sf::RectangleShape& shape = walls[i].shape;
+      const sf::Vector2f& position = shape.getPosition();
+      const sf::Vector2f& size = shape.getSize();
+      const sf::Color& color = shape.getFillColor();
+
+      vertexArray[i * 4 + 0].position = position;
+      vertexArray[i * 4 + 1].position = sf::Vector2f(position.x + size.x, position.y);
+      vertexArray[i * 4 + 2].position = sf::Vector2f(position.x + size.x, position.y + size.y);
+      vertexArray[i * 4 + 3].position = sf::Vector2f(position.x, position.y + size.y);
+
+      vertexArray[i * 4 + 0].color = color;
+      vertexArray[i * 4 + 1].color = color;
+      vertexArray[i * 4 + 2].color = color;
+      vertexArray[i * 4 + 3].color = color;
+    }
+    return vertexArray;
+  }
+
+  sf::VertexArray m_vertexArrayWalls;
+  sf::VertexArray m_vertexArrayPosts;
   Wall m_walls[NUMBER_OF_WALLS];  // Array of wall states
+  /// we need to retain the rectangles for sensors and collisions
+  sf::Rect<float> m_posts[NUMBER_OF_POSTS];  // Array of post shapes
   sf::Color m_knownPresentColor = (sf::Color::Red);
   sf::Color m_knownAbsentColor = (sf::Color::Black);
   sf::Color m_unknownColor = (sf::Color(128, 128, 128, 64));
