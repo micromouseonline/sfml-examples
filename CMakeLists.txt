@@ -110,6 +110,7 @@ include_directories(libs/utils)
 
 add_subdirectory(src/001-basic-window-and-shapes)
 add_subdirectory(src/001c-frame-rates)
+add_subdirectory(src/001d-drawing-speed)
 add_subdirectory(src/002-shapes-and-textures)
 add_subdirectory(src/002d-tile-maps)
 add_subdirectory(src/002a-sprites)
@@ -145,6 +146,7 @@ add_subdirectory(src/501b-noc-behaviours)
 add_subdirectory(src/601-top-down-car-race)
 add_subdirectory(src/708-tilemap)
 add_subdirectory(src/808-wallmap)
+add_subdirectory(src/900-app-structure)
 
 
 
