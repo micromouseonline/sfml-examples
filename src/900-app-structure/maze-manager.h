@@ -217,7 +217,6 @@ class MazeManager {
     for (int i = 0; i < NUMBER_OF_WALLS; i++) {
       window.draw(m_walls[i].shape);
     }
-    draw_line(window, {25.0, 25.0}, {2880 + 25, 2880 + 25}, sf::Color::Cyan);
   }
 
  private:

@@ -3,13 +3,14 @@
 //
 #include "application.h"
 
-Application::Application() : m_window("Application", sf::Vector2u(1200, 800)), m_elapsed(sf::Time::Zero), mStatisticsUpdateTime(sf::Time::Zero), m_robot() {
+Application::Application() : m_window("Application", sf::Vector2u(1600, 1000)), m_elapsed(sf::Time::Zero), mStatisticsUpdateTime(sf::Time::Zero), m_robot() {
   RestartClock();
   m_elapsed = sf::Time::Zero;
   mStatisticsUpdateTime = sf::Time::Zero;
 
+  /// remember that the default view scaling everything by a factor of 3
   // TODO: sort out views and scaling
-  m_textbox.Setup(5, 72, 1200, sf::Vector2f(450, 10));
+  m_textbox.Setup(5, 72, 1600, sf::Vector2f(3000, 25));
   m_textbox.Add("Hello World!");
   m_window.AddObserver(this);
 
@@ -38,6 +39,16 @@ void Application::OnEvent(const Event& event) {
   }
 }
 
+/***
+ * This method will be called every frame. No rendering is done.
+ * It should handle user IO and any other application logic
+ * You could grab the robot state for later use. Logged
+ * messages can be hoovered up for permanent storage.
+ *
+ * Here, for example, the robot sensor values are gathered so
+ * that they can be displayed in a text box
+ * @param deltaTime
+ */
 void Application::Update(sf::Time deltaTime) {
   m_window.Update();  // call this first to process window events
   m_elapsed += deltaTime;
@@ -52,17 +63,31 @@ void Application::Update(sf::Time deltaTime) {
 }
 
 void Application::Render() {
+  /// ALWAYS do this first
   m_window.BeginDraw();
+
+  // grab the window reference to save typing
   sf::RenderWindow& window = *m_window.GetRenderWindow();
 
+  // Render the physical maze
+  // TODO: think about how to add and distinguish the robot map
+  //       from the physical maze
   m_mazeManager.Render(window);
-  draw_line(window, {40, 90}, mp, sf::Color::Red);
+
+  // the textbox it just a demonstration.
+  // we can also put ImGui components here I guess
   m_textbox.Render(window);
 
-  // Draw the robot using RobotDisplay
+  // Draw the robot using the RobotDisplay class
   sf::Vector2f pose = m_robot.GetPose();
   float orientation = m_robot.GetOrientation();
   RobotDisplay::Draw(*m_window.GetRenderWindow(), pose, orientation);
+
+  // we can draw anything else we want here.
+  // it could be a path to the goal, overlaid telemetry
+  // flooding values, highlight to current target
+  // use your imagination.
+  /// ALWAYS do this last
   m_window.EndDraw();
 }
 
