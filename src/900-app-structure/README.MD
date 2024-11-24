@@ -67,11 +67,10 @@ disadvantages of the structure.
     - Limited flexibility; if additional sensor data types or more complex structures are needed, this might require
       changes.
 
-4. Maze
+4. MazeManager
 
 - Role: Holds the map of the maze and provides functionality for calculating sensor readings based on the robot's
-  position
-  and orientation.
+  position and orientation.
 - Key Methods:
     - GetSensorReading(): Calculates the sensor reading (e.g., distance) based on the robot’s current position,
       orientation,

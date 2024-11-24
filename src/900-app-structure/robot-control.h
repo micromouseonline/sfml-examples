@@ -47,7 +47,7 @@
 
 #include <condition_variable>
 #include <mutex>
-#include "maze.h"
+#include "maze-manager.h"
 // #include "robot.h"
 #include "sensor-data.h"
 #include "thread-safe-queue.h"

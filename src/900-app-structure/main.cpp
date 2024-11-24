@@ -6,7 +6,7 @@
 #include <thread>
 #include "application.h"
 #include "collision-object.h"
-#include "maze.h"
+#include "maze-manager.h"
 #include "robot-control.h"
 #include "robot-display.h"
 #include "sensor.h"
@@ -93,6 +93,7 @@ int main() {
   app.GetWindow()->SetTitle("Marty Mouse");
   app.Run();
   return 0;
+#if 0
   // Create the window
   /// Any antialiasing has to be set globally when creating the window:
   sf::ContextSettings settings;
@@ -127,7 +128,7 @@ int main() {
 
   g_robot.setPosition(96, 96);
   g_robot.setRotation(180);
-  std::unique_ptr<Maze> maze = std::make_unique<Maze>();
+  std::unique_ptr<MazeManager> maze = std::make_unique<MazeManager>();
   maze->add_posts(5, 5);
   /// note that  this is a simple demo, nothing stops duplicate walls
   for (int i = 0; i < 4; i++) {
@@ -280,30 +281,6 @@ int main() {
   }
 
   ImGui::SFML::Shutdown();
-
-  return 0;
-}
-
-//////////////////////////////////////////////////////////////////////////////////////////////
-
-/// ChatGPT main suggestion:
-int mainx() {
-  //  sf::RenderWindow window(sf::VideoMode(800, 600), "Robot Simulation");
-  //  ThreadSafeQueue logQueue;
-  //
-  //  Robot robot{0, 0, 0};
-  //  Maze maze;
-  //  SensorData sensorData;
-  //  RobotControl robotControl(robot, maze, sensorData, logQueue);
-  //  RobotDisplay robotDisplay(robotControl, window, logQueue);
-  //
-  //  // Run the robot control logic in a separate thread
-  //  std::thread controlThread([&robotControl]() { robotControl.run(); });
-  //
-  //  // Run the display logic in the main thread
-  //  robotDisplay.run();
-  //
-  //  // Join threads before exiting
-  //  controlThread.join();
+#endif
   return 0;
 }

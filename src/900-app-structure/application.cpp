@@ -3,14 +3,16 @@
 //
 #include "application.h"
 
-Application::Application() : m_window("Application", sf::Vector2u(800, 600)), m_elapsed(sf::Time::Zero), mStatisticsUpdateTime(sf::Time::Zero), m_robot() {
+Application::Application() : m_window("Application", sf::Vector2u(1200, 800)), m_elapsed(sf::Time::Zero), mStatisticsUpdateTime(sf::Time::Zero), m_robot() {
   RestartClock();
   m_elapsed = sf::Time::Zero;
   mStatisticsUpdateTime = sf::Time::Zero;
 
-  m_textbox.Setup(5, 12, 300, sf::Vector2f(450, 10));
+  // TODO: sort out views and scaling
+  m_textbox.Setup(5, 72, 1200, sf::Vector2f(450, 10));
   m_textbox.Add("Hello World!");
   m_window.AddObserver(this);
+
   m_robot.Start(this);
 }
 
@@ -52,6 +54,8 @@ void Application::Update(sf::Time deltaTime) {
 void Application::Render() {
   m_window.BeginDraw();
   sf::RenderWindow& window = *m_window.GetRenderWindow();
+
+  m_mazeManager.Render(window);
   draw_line(window, {40, 90}, mp, sf::Color::Red);
   m_textbox.Render(window);
 
@@ -59,7 +63,6 @@ void Application::Render() {
   sf::Vector2f pose = m_robot.GetPose();
   float orientation = m_robot.GetOrientation();
   RobotDisplay::Draw(*m_window.GetRenderWindow(), pose, orientation);
-
   m_window.EndDraw();
 }
 

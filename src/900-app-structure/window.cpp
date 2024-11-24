@@ -29,6 +29,13 @@ void Window::Setup(const std::string title, const sf::Vector2u& size) {
   /// To change the properties, you have to re-create the screen
   Destroy();
   Create();
+  sf::View view = m_window.getDefaultView();
+  sf::Vector2f originalSize = view.getSize();                  // Scale the view to 25%
+  view.setSize(originalSize.x * 4.0f, originalSize.y * 4.0f);  // Center the view (optional, depending on desired effect)
+  sf::Vector2f newSize = view.getSize();                       // Scale the view to 25%
+
+  view.setCenter(newSize.x * 0.5f, newSize.y * 0.5f);  // Apply the view to the window
+  m_window.setView(view);
   m_window.setFramerateLimit(60);
 }
 

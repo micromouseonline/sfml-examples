@@ -72,8 +72,8 @@ class RobotDisplay : IEventObserver {
   };
 
  private:
-  static constexpr float ROBOT_RADIUS = 10.0f;         // Radius of the robot visualization
-  static constexpr float HEADING_LINE_LENGTH = 15.0f;  // Length of the heading line
+  static constexpr float ROBOT_RADIUS = 35.0f;         // Radius of the robot visualization
+  static constexpr float HEADING_LINE_LENGTH = 50.0f;  // Length of the heading line
 
  public:
 };

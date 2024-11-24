@@ -10,7 +10,7 @@
 #include <ctime>
 #include "drawing.h"
 #include "event_observer.h"
-#include "maze.h"
+#include "maze-manager.h"
 #include "robot-control.h"
 #include "robot-display.h"
 #include "robot-model.h"
@@ -80,6 +80,7 @@ class Application : public IEventObserver {
   Robot m_robot;                 // The robot instance
   std::mutex m_sensorDataMutex;  // Protects sensor data updates
   SensorValues m_sensorValues;   // Current sensor reading that are read by robot
+  MazeManager m_mazeManager;     // This is the maze manager
 };
 
 #endif  // APPLICATION_H
