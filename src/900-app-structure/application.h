@@ -71,6 +71,7 @@ class Application : public IEventObserver {
   static const sf::Time TimePerFrame;
   Window m_window;
   sf::Clock m_clock;
+  sf::Clock m_timer;
   sf::Time m_elapsed;
 
   //  sf::Font mFont;
