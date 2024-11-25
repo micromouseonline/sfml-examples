@@ -9,11 +9,11 @@
 #include <mutex>
 #include <thread>
 #include "collision-object.h"
+#include "core.h"
 #include "robot-control.h"
 #include "robot-model.h"
 #include "sensor-data.h"
 #include "sensor.h"
-
 /***
  * TODO Not sure this is the best place for this macro
  *

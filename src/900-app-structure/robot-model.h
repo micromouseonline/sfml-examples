@@ -7,7 +7,7 @@
 
 #include <SFML/Graphics.hpp>
 #include <cmath>
-
+#include "core.h"
 /***
  * The RobotModel class is the model. It handles the physical properties and  behaviour of
  * the robot hardware - the pose, and dynamics.
