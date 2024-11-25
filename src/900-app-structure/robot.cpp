@@ -75,6 +75,9 @@ void Robot::Stop() {
  */
 
 void Robot::systick() {
+  using namespace std::chrono;
+  auto interval_us = duration_cast<microseconds>(duration<float>(m_LoopTime));
+  auto next_time = steady_clock::now() + interval_us;
   while (m_running) {
     // The mutex will lock out the main thread while this block runs.
     CRITICAL_SECTION(m_SystickMutex) {
@@ -93,7 +96,8 @@ void Robot::systick() {
       m_pose.x += m_LinearVelocity * std::cos(orientationRad) * m_LoopTime;
       m_pose.y += m_LinearVelocity * std::sin(orientationRad) * m_LoopTime;
     }
-    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    std::this_thread::sleep_until(next_time);
+    next_time += interval_us;
   }
 }
 
