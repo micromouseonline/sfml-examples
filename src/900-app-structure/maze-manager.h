@@ -12,7 +12,7 @@
 #include <vector>
 #include "drawing.h"
 
-const int MAZE_WIDTH = (32);
+const int MAZE_WIDTH = (16);
 const int NODES_PER_HORIZ_WALL_ROW = (MAZE_WIDTH);
 const int NODES_PER_VERT_WALL_ROW = (MAZE_WIDTH - 1);
 const int NUMBER_OF_HORIZ_WALLS = (NODES_PER_HORIZ_WALL_ROW);
@@ -53,7 +53,7 @@ enum class Direction { North, NorthEast, East, SouthEast, South, SouthWest, West
  * How they do that is their concern.
  *
  * However, the method used for storing each wall once is the basis of Harjit's diagonal solver.
- * TODO: Create a README about hte method and the arrangement of walls
+ * TODO: Create a README about the method and the arrangement of walls
  *
  * MazeManager can load, save, print and draw a maze to te screen. It stores the actual real-world maze
  * that the simulated robot explored. Each wall has one of the states shown above and a sf::RectangleShape
@@ -190,7 +190,7 @@ class MazeManager {
         float left = 25.0f + x * CELL_SIZE;
         float top = 25.0f + (CELL_SIZE * MAZE_WIDTH) - (float)(y)*CELL_SIZE;
 
-        sf::Rect<float> post_rect(left, top, WALL_THICKNESS - 1, WALL_THICKNESS - 1);
+        sf::FloatRect post_rect(left, top, WALL_THICKNESS - 1, WALL_THICKNESS - 1);
         int index = x * (MAZE_WIDTH + 1) + y;
         m_posts[index] = post_rect;
       }
@@ -247,12 +247,12 @@ class MazeManager {
    * @param color
    * @return
    */
-  //    sf::VertexArray MakeVertexArray(const std::vector<sf::Rect<float>>& rects, const sf::Color& color = sf::Color::Red) {
-  sf::VertexArray MakeVertexArray(const sf::Rect<float>* rects, const sf::Color& color = sf::Color::Red) {
+  //    sf::VertexArray MakeVertexArray(const std::vector<sf::FloatRect>& rects, const sf::Color& color = sf::Color::Red) {
+  sf::VertexArray MakeVertexArray(const sf::FloatRect* rects, const sf::Color& color = sf::Color::Red) {
     sf::VertexArray vertexArray(sf::Quads, NUMBER_OF_POSTS * 4);
 
     for (std::size_t i = 0; i < NUMBER_OF_POSTS; ++i) {
-      const sf::Rect<float>& rect = rects[i];
+      const sf::FloatRect& rect = rects[i];
       float left = rect.left;
       float top = rect.top;
       vertexArray[i * 4 + 0].position = sf::Vector2f(left, top);
@@ -302,7 +302,7 @@ class MazeManager {
   sf::VertexArray m_vertexArrayPosts;
   Wall m_walls[NUMBER_OF_WALLS];  // Array of wall states
   /// we need to retain the rectangles for sensors and collisions
-  sf::Rect<float> m_posts[NUMBER_OF_POSTS];  // Array of post shapes
+  sf::FloatRect m_posts[NUMBER_OF_POSTS];  // Array of post shapes
   sf::Color m_knownPresentColor = (sf::Color::Red);
   sf::Color m_knownAbsentColor = (sf::Color::Black);
   sf::Color m_unknownColor = (sf::Color(128, 128, 128, 64));
