@@ -76,6 +76,7 @@ void Robot::Stop() {
 
 void Robot::systick() {
   using namespace std::chrono;
+  /// NOTE: this runs a little fast on linux
   auto interval_us = duration_cast<microseconds>(duration<float>(m_LoopTime));
   auto next_time = steady_clock::now() + interval_us;
   while (m_running) {
@@ -92,7 +93,7 @@ void Robot::systick() {
         m_orientation += 360.0f;
       }
       // Update position based on linear velocity and orientation
-      float orientationRad = m_orientation * 3.14159f / 180.0f;
+      float orientationRad = m_orientation * RADIANS;
       m_pose.x += m_LinearVelocity * std::cos(orientationRad) * m_LoopTime;
       m_pose.y += m_LinearVelocity * std::sin(orientationRad) * m_LoopTime;
     }

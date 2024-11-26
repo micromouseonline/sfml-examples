@@ -8,8 +8,18 @@
 #include <SFML/Graphics.hpp>
 
 #ifndef M_PI
-#define M_PI 3.14159265358979323846
+#define M_PI 3.1415923846f
 #endif
 
+constexpr float RADIANS = M_PI / 180.0f;
+constexpr float DEGREES = 180.0f / M_PI;
 
-#endif //CORE_H
+inline float toRadians(float deg) {
+  return deg * RADIANS;
+}
+
+inline float toDegrees(float rad) {
+  return rad * DEGREES;
+}
+
+#endif  // CORE_H
