@@ -6,4 +6,5 @@ target_sources(${APP} PRIVATE
         application.cpp
         robot.cpp
         robot-control.cpp
+        mazedata.cpp
 )
