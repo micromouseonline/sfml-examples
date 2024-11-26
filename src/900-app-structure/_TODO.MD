@@ -10,6 +10,8 @@
 - [ ] Add sprite to RobotDisplay
 - [ ] Implement collision Detection for Robot
 - [ ] get some simple wall following behaviour into RobotControl (Mouse)
+- [ ] Implement load maze from data.
+- [ ] Add facility to store and mark goal area.
 - [ ] Implement load maze from file.
 - [ ] Implement save maze to file.
 - [ ] Add ImGui for GUI

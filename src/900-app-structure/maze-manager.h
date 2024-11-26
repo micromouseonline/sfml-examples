@@ -10,9 +10,11 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include "core.h"
 #include "drawing.h"
+#include "mazedata.h"
 
-const int MAZE_WIDTH = (16);
+const int MAZE_WIDTH = (32);
 const int NODES_PER_HORIZ_WALL_ROW = (MAZE_WIDTH);
 const int NODES_PER_VERT_WALL_ROW = (MAZE_WIDTH - 1);
 const int NUMBER_OF_HORIZ_WALLS = (NODES_PER_HORIZ_WALL_ROW);
@@ -83,6 +85,7 @@ class MazeManager {
   MazeManager() {
     InitMaze();  //
     InitPosts();
+    loadFromMemory(japan2016ef_half, MAZE_WIDTH);
   };
 
   ~MazeManager() = default;
@@ -234,6 +237,25 @@ class MazeManager {
     window.draw(m_vertexArrayPosts);
   }
 
+  bool loadFromMemory(const uint8_t* data, int mazeWidth) {
+    for (int y = 0; y < mazeWidth; y++) {
+      for (int x = 0; x < mazeWidth; x++) {
+        int index = x * mazeWidth + y;
+        int walls = data[index];
+        for (int d = 0; d < 4; d++) {
+          // we need only do the North and East walls
+          if (walls & BIT(0)) {
+            SetWallState(x, y, Direction::North, WallState::KnownPresent);
+          }
+          if (walls & BIT(1)) {
+            SetWallState(x, y, Direction::East, WallState::KnownPresent);
+          }
+        }
+      }
+    }
+    return true;
+  }
+
  private:
   /***
    * This utility will take a list of float rectangles (should be ints?) and create a vertex array
@@ -278,7 +300,6 @@ class MazeManager {
   //  sf::VertexArray MakeVertexArrayFromShapes(const std::vector<sf::RectangleShape>& shapes) {
   sf::VertexArray MakeVertexArrayFromWalls(const Wall* walls) {
     sf::VertexArray vertexArray(sf::Quads, NUMBER_OF_WALLS * 4);
-
     for (std::size_t i = 0; i < NUMBER_OF_WALLS; ++i) {
       const sf::RectangleShape& shape = walls[i].shape;
       const sf::Vector2f& position = shape.getPosition();

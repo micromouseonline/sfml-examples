@@ -11,6 +11,8 @@
 #define M_PI 3.1415923846f
 #endif
 
+#define BIT(x) (1 << x)
+
 constexpr float RADIANS = M_PI / 180.0f;
 constexpr float DEGREES = 180.0f / M_PI;
 
