@@ -13,4 +13,4 @@
 - [ ] Implement load maze from file.
 - [ ] Implement save maze to file.
 - [ ] Add ImGui for GUI
-- [ ] Refine the sizes and placement of the posts and walls in MazManager
+- [x] Refine the sizes and placement of the posts and walls in MazManager
