@@ -6,11 +6,36 @@
 #include <cmath>
 #include <iostream>
 #include <string>
+#include "drawing.h"
+
+void draw_axes(sf::RenderWindow& window) {
+  /// draw the x and y axes so that we can retain some idea where we are
+  sf::CircleShape origin(10);
+  origin.setFillColor(sf::Color::Transparent);
+  origin.setOutlineColor(sf::Color::Red);
+  origin.setOutlineThickness(4);
+  origin.setPosition(0, 0);
+  origin.setOrigin(10, 10);
+  window.draw(origin);
+  draw_line(window, {0, 0}, {10000, 0}, sf::Color::Green);
+  draw_line(window, {0, 0}, {0, 10000}, sf::Color::Yellow);
+}
+
+void fillViewWithColor(sf::RenderWindow& window, const sf::Color& color) {
+  sf::View view = window.getView();
+  sf::Vector2f viewSize = view.getSize();
+  sf::Vector2f viewCenter = view.getCenter();
+  sf::RectangleShape rectangle(viewSize);
+  rectangle.setFillColor(color);  // Set the position of the rectangle to the top-left corner of the view
+  rectangle.setPosition(viewCenter - viewSize / 2.f);
+  window.draw(rectangle);
+}
 
 int main() {
   sf::ContextSettings settings;
   settings.antialiasingLevel = 8;  // the number of multi-samplings to use. 4 is probably fine
-  sf::RenderWindow window(sf::VideoMode(800, 400), WINDOW_TITLE, sf::Style::Default, settings);
+  /// do not allow the window to resize
+  sf::RenderWindow window(sf::VideoMode(980 + 400, 980), WINDOW_TITLE, sf::Style::Close | sf::Style::Titlebar, settings);
   window.setFramerateLimit(60);
 
   sf::Font font;
@@ -22,22 +47,46 @@ int main() {
   text.setCharacterSize(12);
   text.setString("User Interface");
   text.setPosition(20, 3);
-  sf::Vector2f mapSize(3000, 3000);
 
-  /// define an object on the map
-  sf::RectangleShape map_box({2800, 2800});
-  map_box.setFillColor(sf::Color::Green);
+  /**
+   * Simulate our working area. The map is all drawn way over to the right in
+   * world space and it is big.
+   *
+   * with the map out of the way, we can draw stuff in the UI on the left and
+   * have a window up to 5000 pixels wide without ever seeing the map.
+   */
+  sf::Image image;
+  image.loadFromFile("./assets/images/map-2892x2892.png");
+  sf::Texture texture;
+  texture.loadFromImage(image);
+  sf::Sprite sprite;
+  sprite.setTexture(texture);
+  sprite.setPosition(5000, 0);
+  sf::Vector2f mapSize(image.getSize().x, image.getSize().y);
+
+  sf::View mapView;
+  mapView.setSize(mapSize.x, mapSize.y);
+  mapView.setCenter(sprite.getPosition().x + mapSize.x / 2, mapSize.y / 2);
+  // but we want the map to be displayed in a square region at the
+  // top left of the window.
+  float frac = (float)window.getSize().y / (float)window.getSize().x;
+  mapView.setViewport(sf::FloatRect(0.0f, 0.0f, frac, 1.0f));
+
+  /// The UI will be drawn using the default view and positioned to the right of the map
+  float uiLeftEdge = window.getSize().x - 400;
+  /// or we could use
+  // float uiLeftEdge = window.getSize().x - window.getSize().y;
 
   /// define an object in the UI
-  sf::RectangleShape ui_box({100, 100});
-  ui_box.setFillColor(sf::Color::Red);
+  sf::RectangleShape ui_box({400, (float)window.getSize().y});
+  ui_box.setFillColor(sf::Color(127, 128, 0, 255));
+  ui_box.setPosition(0, 0);
 
-  /// The map is all drawn way over to the right in
-  /// pixel space and it is big. We will want it to retain
-  /// its aspect ratio when the window resizes
-  sf::View mapView(sf::FloatRect(1000, 0, 3000, 3000));
-  /// we want it to occupy the right hal of the window
-  mapView.setViewport(sf::FloatRect(0.5, 0, 0.5, 1.0));
+  // there is no need for a view or viewport but...
+  sf::View uiView;
+  uiView.setSize({400, (float)window.getSize().y});
+  uiView.setCenter(200, window.getSize().y / 2);
+  uiView.setViewport(sf::FloatRect(frac, 0.0f, 1.0f - frac, 1.0f));
 
   while (window.isOpen()) {
     sf::Event event;
@@ -47,40 +96,17 @@ int main() {
       }
     }
 
-    /// make the map area fit in the space left after the UI
-    sf::Vector2u windowSize = window.getSize();
-    float map_left = 230.0f;
-    sf::FloatRect screenRect(0, 0, static_cast<float>(windowSize.x), static_cast<float>(windowSize.y));
-    sf::View uiView(screenRect);
-    float windowAspect = static_cast<float>(windowSize.x) / static_cast<float>(windowSize.y);
-    float mapAspect = mapSize.x / mapSize.y;
-    if (windowAspect > mapAspect) {
-      mapView.setSize(mapSize.x * windowAspect / mapAspect, mapSize.y);
-    } else {
-      mapView.setSize(mapSize.x, mapSize.y * mapAspect / windowAspect);
-    }
-    float frac = map_left / windowSize.x;
-    mapView.setViewport(sf::FloatRect(frac, 0.0f, 1.0f - frac, 1.0f));
-
-    //    float map_width = windowSize.x - map_left;  // Calculate the aspect ratio of the view
-    //    float aspectRatio = map_width / windowSize.y;
-    //    mapView.setSize(3000.0f, 3000.0f / aspectRatio);
-    //    mapView.setCenter(1000.0 + 1500, 1500 / aspectRatio);
-    //    // Update the viewport to ensure the map is 230 pixels from the left
-    //    float viewportLeft = map_left / windowSize.x;
-    //    mapView.setViewport(sf::FloatRect(viewportLeft, 0, 1 - viewportLeft, 1.0f));
-
-    ui_box.setPosition(20, 20);
-    map_box.setPosition(1100, 100);
-
     window.clear();
-
     window.setView(mapView);
-    window.draw(map_box);
-
+    window.draw(sprite);
+    // now we can revert to the default view and draw directly
+    // fillViewWithColor(window, sf::Color::Green);
+    // window.setView(window.getDefaultView());
     window.setView(uiView);
+    // fillViewWithColor(window, sf::Color::Blue);
+    draw_axes(window);
     window.draw(ui_box);
-    window.draw(text);
+
     window.display();
   }
   return 0;
