@@ -8,6 +8,13 @@
 #include <string>
 #include "drawing.h"
 
+constexpr int ANTIALIASING_LEVEL = 8;
+constexpr int WINDOW_WIDTH = 1200;
+constexpr int WINDOW_HEIGHT = 800;
+constexpr int FRAME_RATE = 60;
+constexpr float MAP_SIZE = 4000.0f;
+constexpr float MAP_OFFSET = 5000.0f;
+
 void fillViewWithColor(sf::RenderWindow& window, const sf::Color& color) {
   sf::View view = window.getView();
   sf::Vector2f viewSize = view.getSize();
@@ -20,10 +27,10 @@ void fillViewWithColor(sf::RenderWindow& window, const sf::Color& color) {
 
 int main() {
   sf::ContextSettings settings;
-  settings.antialiasingLevel = 8;  // the number of multi-samplings to use. 4 is probably fine
+  settings.antialiasingLevel = ANTIALIASING_LEVEL;  // the number of multi-samplings to use. 4 is probably fine
   /// do not allow the window to resize
-  sf::RenderWindow window(sf::VideoMode(1200, 800), WINDOW_TITLE, sf::Style::Close | sf::Style::Titlebar, settings);
-  window.setFramerateLimit(60);
+  sf::RenderWindow window(sf::VideoMode(WINDOW_WIDTH, WINDOW_HEIGHT), WINDOW_TITLE, sf::Style::Close | sf::Style::Titlebar, settings);
+  window.setFramerateLimit(FRAME_RATE);
 
   /**
    * Simulate our working area. It is way off to one side, we can draw stuff in the UI on the left and
@@ -32,21 +39,30 @@ int main() {
    */
   float windowWidth = window.getSize().x;
   float windowHeight = window.getSize().y;
-  float mapSize = 4000.0f;  // or whatever region we want. it will get scaled
-  float mapOffset = 5000.0f;
+  float mapSize = MAP_SIZE;  // or whatever region we want. it will get scaled
+  float mapOffset = MAP_OFFSET;
+  /// we will need a view of the map
   sf::View mapView;
   mapView.setSize(windowHeight, windowHeight);
+  /// remember the offset when finding the center
   mapView.setCenter(mapOffset + mapSize / 2.0f, mapSize / 2.0f);
 
-  // but we want the map to be displayed in a square region
+  // e want the map to be displayed in a square region of the window
+  // let's put it on the left
   float mapFraction = (float)window.getSize().y / (float)window.getSize().x;
+  // viewports are always defined in terms of fractions of the window size
   mapView.setViewport(sf::FloatRect(0.0f, 0.0f, mapFraction, 1.0f));
 
-  // Use the rest of the screen for the UI. We do not want is scaled
+  // Use the rest of the screen for the UI. We do not want it scaled
   sf::View uiView;
   float uiWidth = windowWidth - mapSize;
-  uiView.setSize({uiWidth, windowHeight});
+  sf::Vector2f uiSize(uiWidth, windowHeight);
+  // the size is in WORLD coordinates
+  uiView.setSize(uiSize);
+  // positioning of views is always with reference to their centre
+  // in WORLD coordinates - think of it as the 'camera' aim point
   uiView.setCenter(uiWidth / 2.0f, windowHeight / 2.0f);
+  // now use the rest of the screen for the viewport
   uiView.setViewport(sf::FloatRect(mapFraction, 0.0f, 1.0f - mapFraction, 1.0f));
 
   while (window.isOpen()) {
