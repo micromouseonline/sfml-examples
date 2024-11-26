@@ -91,6 +91,12 @@ int main() {
   // Program entry point.
   Application app;
   app.GetWindow()->SetTitle("Marty Mouse");
+  auto image = sf::Image{};
+  if (!image.loadFromFile("assets/images/mouse-c.png")) {
+    // Error handling...
+  }
+
+  app.GetWindow()->GetRenderWindow()->setIcon(image.getSize().x, image.getSize().y, image.getPixelsPtr());
   app.Run();
   return 0;
 #if 0
