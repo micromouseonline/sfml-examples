@@ -67,7 +67,6 @@ class Window {
   sf::Vector2u m_windowSize;
   std::string m_windowTitle;
   bool m_isDone;
-  bool m_isFullscreen;
   /// Note that there will be trouble if an observer registers and then gets destroyed
   /// because the vector will still have a pointer to it. The solution is to use a shared_ptr
   std::vector<IEventObserver*> m_observers;

@@ -3,7 +3,7 @@
 //
 #include "application.h"
 
-Application::Application() : m_window("Application", sf::Vector2u(1600, 1000)), m_elapsed(sf::Time::Zero), mStatisticsUpdateTime(sf::Time::Zero), m_robot() {
+Application::Application() : m_window("Application", sf::Vector2u(1600, 980)), m_elapsed(sf::Time::Zero), mStatisticsUpdateTime(sf::Time::Zero), m_robot() {
   RestartClock();
   m_elapsed = sf::Time::Zero;
   mStatisticsUpdateTime = sf::Time::Zero;

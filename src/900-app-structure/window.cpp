@@ -24,7 +24,6 @@ Window::~Window() {
 void Window::Setup(const std::string title, const sf::Vector2u& size) {
   m_windowTitle = title;
   m_windowSize = size;
-  m_isFullscreen = false;
   m_isDone = false;
   /// To change the properties, you have to re-create the screen
   Destroy();
@@ -42,7 +41,7 @@ void Window::Setup(const std::string title, const sf::Vector2u& size) {
 void Window::Create() {
   sf::ContextSettings settings;
   settings.antialiasingLevel = 8;  // the number of multi-samplings to use. 4 is probably fine
-  auto style = (m_isFullscreen ? sf::Style::Fullscreen : sf::Style::Default);
+  int style = sf::Style::Titlebar + sf::Style::Close;
   m_window.create({m_windowSize.x, m_windowSize.y, 32}, m_windowTitle, style, settings);
 }
 
@@ -59,9 +58,6 @@ void Window::EndDraw() {
 
 bool Window::IsDone() const {
   return m_isDone;
-}
-bool Window::IsFullscreen() const {
-  return m_isFullscreen;
 }
 
 void Window::Draw(sf::Drawable& l_drawable) {
