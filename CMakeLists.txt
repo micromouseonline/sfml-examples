@@ -109,6 +109,7 @@ include_directories(libs/implot)
 include_directories(libs/utils)
 
 add_subdirectory(src/001-basic-window-and-shapes)
+add_subdirectory(src/001a-window-positioning)
 add_subdirectory(src/001c-frame-rates)
 add_subdirectory(src/001d-drawing-speed)
 add_subdirectory(src/002-shapes-and-textures)
@@ -149,6 +150,3 @@ add_subdirectory(src/601-top-down-car-race)
 add_subdirectory(src/708-tilemap)
 add_subdirectory(src/808-wallmap)
 add_subdirectory(src/900-app-structure)
-
-
-
