@@ -1,8 +1,7 @@
-#include <math.h>
 #include <SFML/Graphics.hpp>
 #include <SFML/System/Clock.hpp>
 #include <SFML/Window/Event.hpp>
-#include <iostream>
+#include <cmath>
 #include "imgui-SFML.h"
 #include "imgui.h"
 #include "implot.h"
@@ -24,7 +23,7 @@ float fb = 30.0;
 int main() {
   /// Any antialiasing has to be set globally when creating the window:
   sf::ContextSettings settings;
-  settings.antialiasingLevel = 16;  // the number of multisamplings to use. 4 is probably fine
+  settings.antialiasingLevel = 8;  // the number of multisamplings to use. 4 is probably fine
   sf::RenderWindow window{sf::VideoMode(1100, 800), WINDOW_TITLE, sf::Style::Default, settings};
 
   window.setVerticalSyncEnabled(true);
@@ -81,7 +80,7 @@ int main() {
     window.display();
   }
   ImPlot::DestroyContext();
-  //  ImGui::DestroyContext();
+  ImGui::SFML::Shutdown();
 
   return 0;
 }
