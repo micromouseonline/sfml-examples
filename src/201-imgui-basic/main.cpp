@@ -34,7 +34,7 @@ void draw_divider() {
 int main() {
   /// Any antialiasing has to be set globally when creating the window:
   sf::ContextSettings settings;
-  settings.antialiasingLevel = 16;  // the number of multisamplings to use. 4 is probably fine
+  settings.antialiasingLevel = 8;  // the number of multisamplings to use. 4 is probably fine
   sf::RenderWindow window{sf::VideoMode(800, 600), WINDOW_TITLE, sf::Style::Default, settings};
 
   window.setVerticalSyncEnabled(true);
@@ -99,6 +99,7 @@ int main() {
 
     window.display();
   }
+  ImGui::SFML::Shutdown();
 
   return 0;
 }
