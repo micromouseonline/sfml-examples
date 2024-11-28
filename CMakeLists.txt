@@ -95,6 +95,7 @@ FetchContent_Declare(fmt
 FetchContent_MakeAvailable(fmt)
 
 # ###############################################################
+include_directories(${imgui_SOURCE_DIR})
 
 # Immediate Mode PLotting Library
 add_subdirectory(libs/implot)
@@ -104,7 +105,6 @@ include_directories(libs/implot)
 set(SFML_LIBS PUBLIC sfml-graphics sfml-system sfml-window)
 set(IMGUI_LIBS PUBLIC ImGui-SFML::ImGui-SFML)
 
-include_directories(${imgui_SOURCE_DIR})
 include_directories(libs/implot)
 include_directories(libs/utils)
 

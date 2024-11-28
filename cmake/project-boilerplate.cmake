@@ -13,4 +13,5 @@ target_link_libraries(
         ${SANITIZER_FLAGS}
         ${SFML_LIBS}
         ${IMGUI_LIBS}
+        ${IMPLOT_LIBS}
 )
