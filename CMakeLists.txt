@@ -21,40 +21,40 @@ include(${CMAKE_SOURCE_DIR}/cmake/print_compiler_info.cmake)
 
 # ###############################################################
 function(show_compiler_info target)
-        add_custom_command(
-                TARGET ${target} PRE_BUILD
-                COMMAND ${CMAKE_COMMAND} -E echo "C++ Compiler ID: ${CMAKE_CXX_COMPILER_ID}"
-                COMMAND ${CMAKE_COMMAND} -E echo "C++ Compiler Version: ${CMAKE_CXX_COMPILER_VERSION}"
-        )
+    add_custom_command(
+            TARGET ${target} PRE_BUILD
+            COMMAND ${CMAKE_COMMAND} -E echo "C++ Compiler ID: ${CMAKE_CXX_COMPILER_ID}"
+            COMMAND ${CMAKE_COMMAND} -E echo "C++ Compiler Version: ${CMAKE_CXX_COMPILER_VERSION}"
+    )
 endfunction()
 
 # ###############################################################
 # be sure to copy any assets into the binary directory
 function(copy_resources target)
-        add_custom_command(
-                TARGET ${target}
-                COMMENT "Copy Resources directory"
-                COMMAND ${CMAKE_COMMAND} -E echo " Copy Assets -"
-                COMMAND ${CMAKE_COMMAND} -E echo "          from:  ${ASSETS_SOURCE_DIR}"
-                COMMAND ${CMAKE_COMMAND} -E echo "            to:  ${ASSETS_DEST_DIR}"
-                PRE_BUILD COMMAND ${CMAKE_COMMAND} -E copy_directory ${ASSETS_SOURCE_DIR} ${ASSETS_DEST_DIR}
+    add_custom_command(
+            TARGET ${target}
+            COMMENT "Copy Resources directory"
+            COMMAND ${CMAKE_COMMAND} -E echo " Copy Assets -"
+            COMMAND ${CMAKE_COMMAND} -E echo "          from:  ${ASSETS_SOURCE_DIR}"
+            COMMAND ${CMAKE_COMMAND} -E echo "            to:  ${ASSETS_DEST_DIR}"
+            PRE_BUILD COMMAND ${CMAKE_COMMAND} -E copy_directory ${ASSETS_SOURCE_DIR} ${ASSETS_DEST_DIR}
 
-                # This second version is cmake >= 3.26 only
-                # PRE_BUILD COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different ${ASSETS_SOURCE_DIR} ${ASSETS_DEST_DIR}
-                VERBATIM
-        )
+            # This second version is cmake >= 3.26 only
+            # PRE_BUILD COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different ${ASSETS_SOURCE_DIR} ${ASSETS_DEST_DIR}
+            VERBATIM
+    )
 endfunction()
 
 # ###############################################################
 # use this if needed for audio or other DLLs on windows platforms
 function(copy_windows_dlls target)
-        if(WIN32)
-                add_custom_command(
-                        TARGET ${target}
-                        COMMENT "Copy OpenAL DLL"
-                        PRE_BUILD COMMAND ${CMAKE_COMMAND} -E copy ${SFML_SOURCE_DIR}/extlibs/bin/$<IF:$<EQUAL:${CMAKE_SIZEOF_VOID_P},8>,x64,x86>/openal32.dll $<TARGET_FILE_DIR:${target}>
-                        VERBATIM)
-        endif()
+    if (WIN32)
+        add_custom_command(
+                TARGET ${target}
+                COMMENT "Copy OpenAL DLL"
+                PRE_BUILD COMMAND ${CMAKE_COMMAND} -E copy ${SFML_SOURCE_DIR}/extlibs/bin/$<IF:$<EQUAL:${CMAKE_SIZEOF_VOID_P},8>,x64,x86>/openal32.dll $<TARGET_FILE_DIR:${target}>
+                VERBATIM)
+    endif ()
 endfunction()
 
 # ###############################################################
@@ -146,6 +146,7 @@ add_subdirectory(src/400-simple-threads)
 add_subdirectory(src/404-threads-producer-consumer)
 add_subdirectory(src/405-thread-pools)
 add_subdirectory(src/406-multi-threading-real-time-simulations)
+add_subdirectory(src/407-threads-and-callbacks)
 add_subdirectory(src/501a-noc-vectors)
 add_subdirectory(src/501b-noc-behaviours)
 add_subdirectory(src/601-top-down-car-race)
